@@ -1,0 +1,23 @@
+[
+  {
+    "id": "korpus-1",
+    "name": "Корпус И",
+    "location": "уточнить адрес",
+    "canteen_location": "уточнить этаж/крыло",
+    "load": "low"
+  },
+  {
+    "id": "korpus-2",
+    "name": "Корпус Р",
+    "location": "уточнить адрес",
+    "canteen_location": "уточнить этаж/крыло",
+    "load": "medium"
+  },
+  {
+    "id": "korpus-3",
+    "name": "Корпус Т",
+    "location": "уточнить адрес",
+    "canteen_location": "уточнить этаж/крыло",
+    "load": "high"
+  }
+]

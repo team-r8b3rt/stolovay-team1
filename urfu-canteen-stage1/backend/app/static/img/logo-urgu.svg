@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <!-- Временный логотип-заглушка УрФУ (собственная эмблема, не копия официального).
+       Заменить на static/img/logo-urgu.png — официальный/собственный логотип УрФУ. -->
+  <rect width="120" height="120" rx="24" fill="#0f1c4d"/>
+  <path d="M60 30 L86 46 L60 62 L34 46 Z" fill="#ffffff"/>
+  <circle cx="60" cy="58" r="16" fill="#e5b800"/>
+</svg>
