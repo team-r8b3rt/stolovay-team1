@@ -4,11 +4,10 @@
 
 {% block content %}
   <header class="site-header">
-    <!-- Логотип-заглушка: заменить на финальный файл static/img/logo-urgu.png -->
     <div class="brand">
       <img class="brand-logo"
-           src="{{ url_for('static', filename='img/logo-urgu.svg') }}"
-           alt="Логотип УрФУ">
+           src="{{ url_for('static', filename='img/logo-cafe.png') }}"
+           alt="Логотип УрФУ Столовая">
       <span class="brand-title">УрФУ Столовая</span>
     </div>
 
@@ -23,42 +22,34 @@
     </div>
   </header>
 
-  <main class="page">
-    <h1 class="page-title">Столовые Новокольцовского кампуса</h1>
+  <main class="map-section">
+    <h2 class="map-title">Столовые Новокольцовского кампуса</h2>
 
-    <!-- Три карточки корпусов: одна на каждый корпус из corpuses.json -->
-    <div class="corpuses">
+    <!-- Карта кампуса с метками зданий.
+         Метка ставится в точке (pin_x, pin_y) в процентах от карты (corpuses.json). -->
+    <div class="campus-map-wrap">
+      <img class="campus-map-img"
+           src="{{ url_for('static', filename='img/map-nvk.jpg') }}"
+           alt="Карта Новокольцовского кампуса">
+
       {% for corpus in corpuses %}
-        <a class="corpus-card" href="{{ url_for('main.corpus', corpus_id=corpus.id) }}">
-          <!-- Капелька-пин загруженности; файл в static/img/ -->
-          <img class="corpus-pin"
-               src="{{ url_for('static', filename='img/' ~ corpus.pin) }}"
-               alt="Загруженность: {{ corpus.load }}">
-          <div class="corpus-body">
-            <h2 class="corpus-name">{{ corpus.name }}</h2>
-            <p class="corpus-location">{{ corpus.location }}</p>
-          </div>
+        {# TODO: вернуть выбор по corpus.load после Этапа 2; пока все пины зелёные #}
+        {% set pin_file = corpus.pin_files["low"] %}
+        <a class="map-pin"
+           style="left: {{ corpus.pin_x }}%; top: {{ corpus.pin_y }}%;"
+           href="{{ url_for('main.corpus', corpus_id=corpus.id) }}">
+          <img class="map-pin-img"
+               src="{{ url_for('static', filename='img/' ~ pin_file) }}"
+               alt="ИРИТ-РТФ">
         </a>
       {% endfor %}
     </div>
 
-    <!-- Легенда цветов загруженности -->
-    <section class="legend" aria-label="Расшифровка цветов загруженности">
-      <h2 class="legend-title">Как понимать цвет</h2>
-      <ul class="legend-list">
-        <li class="legend-item">
-          <span class="legend-dot legend-dot-low"></span>
-          <span>Свободно, можно спокойно поесть</span>
-        </li>
-        <li class="legend-item">
-          <span class="legend-dot legend-dot-medium"></span>
-          <span>Средняя загруженность, возможна очередь</span>
-        </li>
-        <li class="legend-item">
-          <span class="legend-dot legend-dot-high"></span>
-          <span>Высокая загруженность, большая очередь</span>
-        </li>
-      </ul>
-    </section>
+    <!-- ===== Легенда цветов ===== -->
+    <ul class="load-legend">
+      <li><span class="legend-dot dot-low"></span> Свободно — можно спокойно поесть</li>
+      <li><span class="legend-dot dot-medium"></span> Средняя загруженность — возможна очередь</li>
+      <li><span class="legend-dot dot-high"></span> Высокая загруженность — большая очередь</li>
+    </ul>
   </main>
 {% endblock %}
