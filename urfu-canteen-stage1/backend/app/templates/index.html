@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}УрФУ Столовая — главная{% endblock %}
+
+{% block content %}
+  <header class="site-header">
+    <!-- Логотип-заглушка: заменить на финальный файл static/img/logo-urgu.png -->
+    <div class="brand">
+      <img class="brand-logo"
+           src="{{ url_for('static', filename='img/logo-urgu.svg') }}"
+           alt="Логотип УрФУ">
+      <span class="brand-title">УрФУ Столовая</span>
+    </div>
+
+    <div class="role-box">
+      <span class="role-label">Вы: <strong>{{ role_name }}</strong></span>
+      <form method="post"
+            action="{{ url_for('main.logout') if role == 'admin' else url_for('main.login') }}">
+        <button type="submit" class="btn-role">
+          {{ 'Выйти из админки' if role == 'admin' else 'Войти как администратор' }}
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <main class="page">
+    <h1 class="page-title">Столовые Новокольцовского кампуса</h1>
+
+    <!-- Три карточки корпусов: одна на каждый корпус из corpuses.json -->
+    <div class="corpuses">
+      {% for corpus in corpuses %}
+        <a class="corpus-card" href="{{ url_for('main.corpus', corpus_id=corpus.id) }}">
+          <!-- Капелька-пин загруженности; файл в static/img/ -->
+          <img class="corpus-pin"
+               src="{{ url_for('static', filename='img/' ~ corpus.pin) }}"
+               alt="Загруженность: {{ corpus.load }}">
+          <div class="corpus-body">
+            <h2 class="corpus-name">{{ corpus.name }}</h2>
+            <p class="corpus-location">{{ corpus.location }}</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- Легенда цветов загруженности -->
+    <section class="legend" aria-label="Расшифровка цветов загруженности">
+      <h2 class="legend-title">Как понимать цвет</h2>
+      <ul class="legend-list">
+        <li class="legend-item">
+          <span class="legend-dot legend-dot-low"></span>
+          <span>Свободно, можно спокойно поесть</span>
+        </li>
+        <li class="legend-item">
+          <span class="legend-dot legend-dot-medium"></span>
+          <span>Средняя загруженность, возможна очередь</span>
+        </li>
+        <li class="legend-item">
+          <span class="legend-dot legend-dot-high"></span>
+          <span>Высокая загруженность, большая очередь</span>
+        </li>
+      </ul>
+    </section>
+  </main>
+{% endblock %}
