@@ -1,0 +1,246 @@
+/* Цвета и переменные фирменного стиля — меняются в одном месте */
+:root {
+  --color-primary: #0f1c4d;
+  --color-primary-light: #1c2f78;
+  --color-accent: #e5b800;
+  --color-bg: #f5f6fa;
+  --color-text: #1a1a1a;
+  --color-text-muted: #5a6270;
+  --color-load-low: #2e9e4f;
+  --color-load-medium: #e5b800;
+  --color-load-high: #d63333;
+
+  /* Палитра логотипа столовой (крем + бордовый) — для кнопок */
+  --color-cream: #fbf7ee;
+  --color-wine: #7c0921;
+
+  --radius: 16px;
+  --shadow: 0 4px 14px rgba(15, 28, 77, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* ===== Шапка ===== */
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.brand-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.role-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  width: 100%;
+}
+
+.role-label {
+  font-size: 16px;
+  color: #d9ddee;
+}
+
+.role-label strong {
+  color: #ff5252;
+}
+
+/* Кнопка входа/выхода — прямоугольная, в стиле логотипа столовой (крем + бордовый) */
+.btn-role {
+  background: var(--color-cream);
+  color: var(--color-wine);
+  border: 2px solid var(--color-wine);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.15;
+  padding: 10px 16px;
+  min-height: 44px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(124, 9, 33, 0.28);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.btn-role:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(124, 9, 33, 0.35);
+}
+
+.btn-role:active {
+  transform: scale(0.96);
+}
+
+/* ===== Карта кампуса ===== */
+.map-section {
+  padding: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.map-title {
+  font-size: 28px;
+  font-weight: 900;
+  width: fit-content;
+  margin: 10px auto 18px;
+  color: var(--color-primary);
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+/* Декоративный акцент под заголовком, по ширине текста */
+.map-title::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--color-accent), var(--color-wine));
+}
+
+.campus-map-wrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: #eef1f6;
+  border: 1.5px solid rgba(15, 28, 77, 0.22);
+}
+
+.campus-map-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Метки на карте: пины с подписью, позиция в процентах от карты */
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  z-index: 2;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.35));
+  transition: transform 0.12s ease;
+}
+
+.map-pin:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.map-pin:active {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+.map-pin-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffffff;
+  background: #ffffff;
+  box-shadow: 0 3px 10px rgba(15, 28, 77, 0.3);
+}
+
+/* ===== Легенда цветов ===== */
+.load-legend {
+  list-style: none;
+  padding: 14px 18px;
+  margin: 18px 0 0;
+  font-size: 15px;
+  background: #eef1f6;
+  border: 1.5px solid rgba(15, 28, 77, 0.22);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.load-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-dot.dot-low    { background: var(--color-load-low); }
+.legend-dot.dot-medium { background: var(--color-load-medium); }
+.legend-dot.dot-high   { background: var(--color-load-high); }
+
+/* ===== Заглушка страницы корпуса (Этап 2) ===== */
+.stub-page {
+  padding: 24px 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--color-primary);
+  font-weight: 800;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+/* ===== Десктоп: чуть шире ===== */
+@media (min-width: 600px) {
+  .site-header {
+    padding: 16px 28px;
+  }
+
+  .role-box {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    width: auto;
+  }
+
+  .map-section {
+    padding: 24px;
+  }
+}

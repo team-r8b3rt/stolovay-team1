@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}УрФУ Столовая — главная{% endblock %}
+
+{% block content %}
+  <header class="site-header">
+    <div class="brand">
+      <img class="brand-logo"
+           src="{{ url_for('static', filename='img/logo-cafe.png') }}"
+           alt="Логотип УрФУ Столовая">
+      <span class="brand-title">УрФУ Столовая</span>
+    </div>
+
+    <div class="role-box">
+      <span class="role-label">Вы: <strong>{{ role_name }}</strong></span>
+      <form method="post"
+            action="{{ url_for('main.logout') if role == 'admin' else url_for('main.login') }}">
+        <button type="submit" class="btn-role">
+          {{ 'Выйти из админки' if role == 'admin' else 'Войти как администратор' }}
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <main class="map-section">
+    <h2 class="map-title">Столовые Новокольцовского кампуса</h2>
+
+    <!-- Карта кампуса с метками зданий.
+         Метка ставится в точке (pin_x, pin_y) в процентах от карты (corpuses.json). -->
+    <div class="campus-map-wrap">
+      <img class="campus-map-img"
+           src="{{ url_for('static', filename='img/map-nvk.jpg') }}"
+           alt="Карта Новокольцовского кампуса">
+
+      {% for corpus in corpuses %}
+        {# TODO: вернуть выбор по corpus.load после Этапа 2; пока все пины зелёные #}
+        {% set pin_file = corpus.pin_files["low"] %}
+        <a class="map-pin"
+           style="left: {{ corpus.pin_x }}%; top: {{ corpus.pin_y }}%;"
+           href="{{ url_for('main.corpus', corpus_id=corpus.id) }}">
+          <img class="map-pin-img"
+               src="{{ url_for('static', filename='img/' ~ pin_file) }}"
+               alt="ИРИТ-РТФ">
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- ===== Легенда цветов ===== -->
+    <ul class="load-legend">
+      <li><span class="legend-dot dot-low"></span> Свободно — можно спокойно поесть</li>
+      <li><span class="legend-dot dot-medium"></span> Средняя загруженность — возможна очередь</li>
+      <li><span class="legend-dot dot-high"></span> Высокая загруженность — большая очередь</li>
+    </ul>
+  </main>
+{% endblock %}
