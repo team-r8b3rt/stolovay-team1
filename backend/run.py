@@ -179,7 +179,7 @@ _ADMIN_PASSWORD_HASH = (
     "2453124d4862243"
 )
 
-# ===== CSRF-защита ======================================================
+# ===== Безопасность: защита POST-запросов ==================================
 # Для каждой сессии генерируется токен; все мутирующие запросы (POST/PUT/
 # PATCH/DELETE) проверяют его. Клиент обязан передавать токен заголовком
 # X-CSRF-Token. Это блокирует cross-site request forgery с чужих сайтов.
@@ -203,7 +203,7 @@ def _csrf_protect():
         return jsonify({"error": "Неправильный или отсутствующий CSRF-токен"}), 403
     return None
 
-# ===== Страница (HTML + CSS) ============================================
+# ===== Интерфейс сайта: HTML и CSS ========================================
 INDEX_HTML = """<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -869,7 +869,7 @@ CORPUS_HTML = """<!DOCTYPE html>
     .card-img {
       display: none;
       width: 100%;
-      height: 168px;
+      height: 220px;
       object-fit: cover;
       object-position: center;
       border-radius: var(--radius);
@@ -890,26 +890,28 @@ CORPUS_HTML = """<!DOCTYPE html>
       justify-content: center;
     }
 
+    /* Большая и понятная кнопка меню — удобна для нажатия пальцем на телефоне. */
     .menu-open-btn {
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 100%;
-      padding: 0;
-      border: 0;
-      outline: 0;
-      background: transparent;
+      min-height: 88px;
+      padding: 18px 24px;
+      border: none;
+      outline: none;
+      background: var(--color-primary);
+      color: var(--color-cream);
       cursor: pointer;
       border-radius: var(--radius);
-      overflow: hidden;
+      font-size: clamp(24px, 6vw, 32px);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      box-shadow: 0 5px 14px rgba(15, 28, 77, 0.22);
       transition: transform 0.16s cubic-bezier(.2,.8,.2,1), filter 0.16s ease;
       -webkit-tap-highlight-color: transparent;
     }
-    .menu-image {
-      display: block;
-      width: 100%;
-      height: auto;
-      object-fit: contain;
-      object-position: center;
-    }
+    .menu-image { display: none; }
     .menu-open-btn:hover { transform: scale(1.025); }
     .menu-open-btn:hover .menu-image { filter: brightness(1.05); }
     .menu-open-btn:active,
@@ -1123,7 +1125,8 @@ CORPUS_HTML = """<!DOCTYPE html>
       background: none;
       position: relative;
       width: 100%;
-      height: 66px;
+      height: 82px;
+      background: #ffffff;
       transition: transform 0.16s cubic-bezier(.2,.8,.2,1), box-shadow 0.16s ease;
       -webkit-tap-highlight-color: transparent;
     }
@@ -1134,7 +1137,13 @@ CORPUS_HTML = """<!DOCTYPE html>
     .report-btn.is-pressed { transform: scale(1.06); }
     .report-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
     .report-btn:disabled { opacity: 0.7; cursor: default; }
-    .rbtn-img { display: block; width: 100%; height: 100%; object-fit: fill; }
+    .rbtn-img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* Не растягиваем изображение и текст внутри него. */
+      object-position: center;
+    }
 
     .hover-dot {
       position: absolute;
@@ -1455,8 +1464,8 @@ CORPUS_HTML = """<!DOCTYPE html>
     </div>
 
     <div class="menu-button-wrap">
-      <button type="button" class="menu-open-btn" id="menu-open-btn" aria-label="Открыть меню" aria-haspopup="dialog">
-        <img class="menu-image" src="{{ url_for('static', filename='img/menu.png') }}" alt="Меню столовой">
+      <button type="button" class="menu-open-btn" id="menu-open-btn" aria-label="Открыть меню столовой" aria-haspopup="dialog">
+        Меню столовой
       </button>
     </div>
   </main>
