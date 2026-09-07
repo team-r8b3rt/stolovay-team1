@@ -65,10 +65,17 @@ def _load_json(path, defaults):
 
 
 def _save_json(path, data):
-    """Сохраняет данные в JSON-файл (потокобезопасно)."""
+    """Сохраняет данные в JSON-файл (потокобезопасно и атомарно).
+
+    Сначала пишем во временный файл в том же каталоге, затем атомарно
+    переименовываем os.replace(). Если процесс падает в середине записи,
+    основной файл не остаётся обрезанным/битым.
+    """
     with _IO_LOCK:
-        with open(path, "w", encoding="utf-8") as f:
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
 
 
 # Считываем актуальные load и расположения один раз при старте приложения.
@@ -411,8 +418,120 @@ INDEX_HTML = """<!DOCTYPE html>
 
     /* ===== Мобильные устройства (до 600px) ===== */
     @media (max-width: 599px) {
-      .brand-logo { width: 90px; height: 90px; }
-      .brand-title { font-size: 24px; margin-left: 6px; }
+      /* Мобильная версия: изменения действуют только до 599px.
+         Десктопная вёрстка выше не затрагивается. */
+      .site-header {
+        padding: 12px 14px 14px;
+        gap: 10px;
+      }
+
+      .brand {
+        width: 100%;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .brand-logo {
+        width: 68px;
+        height: 68px;
+        flex: 0 0 68px;
+      }
+
+      .brand-title {
+        min-width: 0;
+        font-size: 21px;
+        line-height: 1.15;
+        margin-left: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .role-box {
+        width: 100%;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .role-label {
+        margin-right: 0;
+        font-size: 16px;
+        text-align: center;
+      }
+
+      .role-prefix { font-size: 17px; }
+
+      .btn-role {
+        width: 100%;
+        margin-right: 0;
+        min-height: 48px;
+        padding: 10px 14px;
+        font-size: 16px;
+      }
+
+      .map-section {
+        width: 100%;
+        padding: 12px 10px 18px;
+        min-height: auto;
+      }
+
+      .map-title {
+        max-width: 100%;
+        white-space: normal;
+        font-size: clamp(20px, 7vw, 30px);
+        line-height: 1.15;
+        margin: 4px auto 16px;
+        transform: none;
+      }
+
+      .map-title::after {
+        width: 55%;
+        height: 4px;
+      }
+
+      .campus-map-wrap { border-radius: 12px; }
+
+      .map-pin-img {
+        width: clamp(54px, 18vw, 76px);
+        height: clamp(54px, 18vw, 76px);
+      }
+
+      .load-legend {
+        margin-top: 14px;
+        padding: 12px 14px;
+        font-size: 15px;
+      }
+
+      .load-legend li {
+        gap: 9px;
+        padding: 7px 0;
+        line-height: 1.25;
+      }
+
+      .legend-dot {
+        width: 14px;
+        height: 14px;
+      }
+
+      .map-hint {
+        font-size: 14px;
+        line-height: 1.35;
+        margin-top: 12px;
+      }
+
+      .admin-modal {
+        top: 12px;
+        right: 12px;
+        width: calc(100vw - 24px);
+        padding: 16px;
+      }
+
+      .admin-modal-actions {
+        flex-direction: column;
+      }
+
+      .admin-modal-login,
+      .admin-modal-close {
+        width: 100%;
+      }
     }
 
     /* ===== Плашка входа администратора (справа сверху) ===== */
@@ -1037,8 +1156,193 @@ CORPUS_HTML = """<!DOCTYPE html>
     footer.fb-shown .footer-text { opacity: 0; }
 
     @media (max-width: 599px) {
-      .brand-logo { width: 90px; height: 90px; }
-      .brand-title { font-size: 24px; margin-left: 6px; }
+      /* Мобильная версия: изменения действуют только до 599px.
+         Десктопная вёрстка выше не затрагивается. */
+      .site-header {
+        padding: 12px 14px 14px;
+        gap: 10px;
+      }
+
+      .brand {
+        width: 100%;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .brand-logo {
+        width: 68px;
+        height: 68px;
+        flex: 0 0 68px;
+      }
+
+      .brand-title {
+        min-width: 0;
+        font-size: 21px;
+        line-height: 1.15;
+        margin-left: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .role-box {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .role-label {
+        margin-right: 0;
+        font-size: 16px;
+        text-align: center;
+      }
+
+      .btn-back {
+        width: 100%;
+        margin-right: 0;
+        min-height: 48px;
+        padding: 10px 14px;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      main {
+        width: 100%;
+        padding: 14px 10px 18px;
+      }
+
+      .corpus-title {
+        font-size: 22px;
+      }
+
+      .corpus-location {
+        width: 100%;
+        font-size: clamp(20px, 7vw, 30px);
+        line-height: 1.15;
+        margin: 8px auto 16px;
+        overflow-wrap: anywhere;
+      }
+
+      .corpus-location::after {
+        width: 55%;
+        height: 4px;
+      }
+
+      .loc-edit-btn {
+        margin-left: 4px;
+        padding: 5px 9px;
+        font-size: 13px;
+        vertical-align: middle;
+      }
+
+      .loc-edit-panel {
+        align-items: stretch;
+        padding: 10px;
+        gap: 8px;
+      }
+
+      .loc-edit-input {
+        min-width: 0;
+        width: 100%;
+        flex-basis: 100%;
+      }
+
+      .loc-save-btn { width: 100%; }
+
+      .frame-box {
+        padding: 8px;
+        margin-bottom: 14px;
+        border-radius: 12px;
+      }
+
+      .card-img {
+        height: auto;
+        min-height: 0;
+      }
+
+      .menu-image {
+        height: auto;
+        min-height: 76px;
+      }
+
+      .menu-open-btn:hover { transform: none; }
+
+      .report-options {
+        gap: 8px;
+        padding: 10px;
+        border-radius: 12px;
+      }
+
+      .report-title {
+        font-size: 19px;
+        line-height: 1.2;
+      }
+
+      .report-btn:hover { transform: none; }
+      .report-btn.medium { transform: none; }
+      .report-btn.medium:hover { transform: none; }
+
+      .menu-modal-overlay {
+        padding: 0;
+      }
+
+      .menu-modal {
+        width: 100%;
+        max-height: 100dvh;
+        border-radius: 14px 14px 0 0;
+      }
+
+      .menu-modal-head {
+        padding: 14px 16px;
+      }
+
+      .menu-modal-title { font-size: 21px; }
+      .menu-modal-close { font-size: 28px; }
+
+      .menu-modal-body {
+        padding: 14px 16px;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .menu-category-head {
+        align-items: flex-start;
+      }
+
+      .menu-cat-name { font-size: 18px; }
+
+      .menu-item-top {
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .menu-item-name,
+      .menu-item-price { font-size: 15px; }
+
+      .menu-item-desc { font-size: 13px; }
+
+      .menu-modal-actions,
+      .menu-form {
+        padding: 12px 16px;
+      }
+
+      .menu-modal-actions {
+        flex-direction: column;
+      }
+
+      .menu-modal-actions .menu-btn,
+      .menu-form-actions .menu-btn {
+        width: 100%;
+      }
+
+      .menu-form-row > div {
+        min-width: 100%;
+      }
+
+      footer {
+        font-size: 14px;
+        padding-bottom: 12px;
+      }
     }
     @media (min-width: 600px) {
       .site-header { padding: 22px 34px; }
