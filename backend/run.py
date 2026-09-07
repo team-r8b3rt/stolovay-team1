@@ -1149,12 +1149,12 @@ CORPUS_HTML = """<!DOCTYPE html>
             <label for="menu-form-name">Название</label>
             <input id="menu-form-name" type="text" maxlength="60">
           </div>
-          <div>
+          <div id="menu-form-price-wrap">
             <label for="menu-form-price">Цена</label>
             <input id="menu-form-price" type="number" min="0">
           </div>
         </div>
-        <div>
+        <div id="menu-form-desc-wrap">
           <label for="menu-form-desc">Описание</label>
           <input id="menu-form-desc" type="text" maxlength="200">
         </div>

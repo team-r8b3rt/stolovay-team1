@@ -219,6 +219,8 @@
   var menuFormName = document.getElementById("menu-form-name");
   var menuFormPrice = document.getElementById("menu-form-price");
   var menuFormDesc = document.getElementById("menu-form-desc");
+  var menuFormPriceWrap = document.getElementById("menu-form-price-wrap");
+  var menuFormDescWrap = document.getElementById("menu-form-desc-wrap");
   var menuFormCatWrap = document.getElementById("menu-form-cat-wrap");
   var menuFormCat = document.getElementById("menu-form-cat");
   var menuFormError = document.getElementById("menu-form-error");
@@ -354,10 +356,14 @@
     if (mode.type === "item") {
       menuFormTitle.textContent = mode.id ? "Изменить блюдо" : "Новое блюдо";
       menuFormCatWrap.hidden = false;
+      menuFormPriceWrap.hidden = false;
+      menuFormDescWrap.hidden = false;
       fillCategorySelect(mode.catId);
     } else {
       menuFormTitle.textContent = mode.id ? "Переименовать категорию" : "Новая категория";
       menuFormCatWrap.hidden = true;
+      menuFormPriceWrap.hidden = true;
+      menuFormDescWrap.hidden = true;
     }
     menuForm.classList.add("open");
     menuFormName.focus();
@@ -384,8 +390,9 @@
       return;
     }
     menuFormSave.disabled = true;
-    var payload = { name: name, description: menuFormDesc.value.trim() };
+    var payload;
     if (mode.type === "item") {
+      payload = { name: name, description: menuFormDesc.value.trim() };
       var priceText = menuFormPrice.value.trim();
       var price = parseInt(priceText, 10);
       if (priceText === "" || isNaN(price) || price < 0 || String(price) !== priceText) {
@@ -420,6 +427,7 @@
         })
         .finally(function () { menuFormSave.disabled = false; });
     } else {
+      payload = { name: name };
       var url2, method2;
       if (mode.id) {
         url2 = "/corpus/" + corpusId + "/menu/categories/" + mode.id;
