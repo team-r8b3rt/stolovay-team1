@@ -1,0 +1,112 @@
+{
+  "irit": [
+    {
+      "id": "c1",
+      "name": "Первые",
+      "visible": true,
+      "items": [
+        {
+          "id": "c1i1",
+          "name": "Борщ",
+          "price": 120,
+          "description": "Наваристый борщ со сметаной и чесночной булочкой.",
+          "visible": true
+        },
+        {
+          "id": "c1i2",
+          "name": "Куриный суп",
+          "price": 95,
+          "description": "Лёгкий суп с курицей, лапшой и зеленью.",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "name": "Вторые блюда",
+      "visible": true,
+      "items": [
+        {
+          "id": "c2i1",
+          "name": "Котлета по-киевски",
+          "price": 150,
+          "description": "Сочная котлета с маслом, гарнир на выбор.",
+          "visible": true
+        },
+        {
+          "id": "c2i2",
+          "name": "Плов",
+          "price": 130,
+          "description": "Сытный плов с говядиной и специями.",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "c3",
+      "name": "Напитки",
+      "visible": true,
+      "items": [
+        {
+          "id": "c3i1",
+          "name": "Компот из сухофруктов",
+          "price": 35,
+          "description": "Домашний компот, 250 мл.",
+          "visible": true
+        },
+        {
+          "id": "c3i2",
+          "name": "Чай чёрный",
+          "price": 25,
+          "description": "Горячий чай с сахаром или лимоном.",
+          "visible": false
+        }
+      ]
+    }
+  ],
+  "ineu": [
+    {
+      "id": "c1",
+      "name": "Первые блюда",
+      "visible": true,
+      "items": [
+        {
+          "id": "c1i1",
+          "name": "Щи",
+          "price": 110,
+          "description": "Щи из свежей капусты со сметаной.",
+          "visible": true
+        },
+        {
+          "id": "c1i2",
+          "name": "Грибной суп",
+          "price": 105,
+          "description": "Ароматный суп с лесными грибами.",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "name": "Вторые блюда",
+      "visible": true,
+      "items": [
+        {
+          "id": "c2i1",
+          "name": "Паста карбонара",
+          "price": 170,
+          "description": "Паста с беконом и сливочным соусом.",
+          "visible": true
+        },
+        {
+          "id": "c2i2",
+          "name": "Рыба с картофелем",
+          "price": 140,
+          "description": "Запечённая рыба с пюре и овощами.",
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "cimt": []
+}
