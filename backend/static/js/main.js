@@ -1,11 +1,11 @@
-// Этот файл отвечает за интерактивность страницы: кнопки, меню и обновление данных.
+// Оценка загруженности на странице корпуса (Этап 2).
 // Кнопки отправляют POST /corpus/<id>/report-load и обновляют блок
 // расшифровки без перезагрузки страницы.
 // В админ-режиме — редактирование расположения столовой (POST canteen-location).
 // На главной — плашка входа администратора (справа сверху).
 
 (function () {
-  // Ищем HTML-тег текущего скрипта. Это нужно, чтобы понять, какая страница открыта.
+  // document.currentScript c defer-скриптами работает не во всех браузерах
   // (в некоторых — null). Доходим до нужного скрипта через querySelector.
   var script = document.currentScript;
   if (!script || (!script.getAttribute("data-page") && !script.getAttribute("data-corpus"))) {
@@ -162,7 +162,7 @@
     btn.addEventListener("click", function () {
       var load = btn.getAttribute("data-load");
 
-      // Пока запрос выполняется, временно отключаем все кнопки, чтобы не отправить данные дважды.
+      // на время запроса блокируем кнопки, чтобы не слать повторно
       Array.prototype.forEach.call(buttons, function (b) { b.disabled = true; });
 
       fetch("/corpus/" + corpusId + "/report-load", {

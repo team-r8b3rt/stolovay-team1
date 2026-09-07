@@ -179,7 +179,7 @@ _ADMIN_PASSWORD_HASH = (
     "2453124d4862243"
 )
 
-# ===== Безопасность: защита POST-запросов ==================================
+# ===== CSRF-защита ======================================================
 # Для каждой сессии генерируется токен; все мутирующие запросы (POST/PUT/
 # PATCH/DELETE) проверяют его. Клиент обязан передавать токен заголовком
 # X-CSRF-Token. Это блокирует cross-site request forgery с чужих сайтов.
@@ -203,7 +203,7 @@ def _csrf_protect():
         return jsonify({"error": "Неправильный или отсутствующий CSRF-токен"}), 403
     return None
 
-# ===== Интерфейс сайта: HTML и CSS ========================================
+# ===== Страница (HTML + CSS) ============================================
 INDEX_HTML = """<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -373,14 +373,14 @@ INDEX_HTML = """<!DOCTYPE html>
     .map-pin:active { transform: translate(-50%, -50%) scale(0.96); }
 
     .map-pin.pin-changing .map-pin-img {
-      animation: pinStatusChange 0.65s cubic-bezier(.2,.8,.2,1);
+      animation: pinStatusChange 0.9s cubic-bezier(.2,.8,.2,1);
     }
 
     @keyframes pinStatusChange {
-      0% { opacity: 1; transform: scale(1) rotate(0deg); }
-      35% { opacity: 0; transform: scale(.78) rotate(-5deg); }
-      65% { opacity: 0; transform: scale(1.12) rotate(5deg); }
-      100% { opacity: 1; transform: scale(1) rotate(0deg); }
+      0% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
+      28% { opacity: 0; transform: scale(.72) rotate(-6deg); filter: blur(2px); }
+      58% { opacity: 0; transform: scale(1.14) rotate(6deg); filter: blur(2px); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
     }
 
     .map-pin-img {
@@ -786,7 +786,7 @@ CORPUS_HTML = """<!DOCTYPE html>
     }
     .btn-back:active { transform: scale(0.96); }
 
-    main { max-width: 600px; margin: 0 auto; padding: 22px; }
+    main { max-width: 700px; margin: 0 auto; padding: 22px; }
 
     .corpus-title { font-size: 28px; font-weight: 900; color: #10245c; margin: 8px 0 4px; }
     .corpus-location {
@@ -869,7 +869,7 @@ CORPUS_HTML = """<!DOCTYPE html>
     .card-img {
       display: none;
       width: 100%;
-      height: 220px;
+      height: 168px;
       object-fit: cover;
       object-position: center;
       border-radius: var(--radius);
@@ -883,35 +883,34 @@ CORPUS_HTML = """<!DOCTYPE html>
       to   { opacity: 1; transform: scale(1); }
     }
 
+    /* Кнопка меню находится в самом низу, под надписью «УрФУ Столовая». */
     .menu-button-wrap {
       width: 100%;
-      margin: 18px 0 0;
+      margin: 12px auto 0;
       display: flex;
       justify-content: center;
     }
 
-    /* Большая и понятная кнопка меню — удобна для нажатия пальцем на телефоне. */
     .menu-open-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      min-height: 88px;
-      padding: 18px 24px;
+      display: block;
+      width: min(540px, 100%);
+      padding: 0;
       border: none;
       outline: none;
-      background: var(--color-primary);
-      color: var(--color-cream);
+      background: transparent;
       cursor: pointer;
       border-radius: var(--radius);
-      font-size: clamp(24px, 6vw, 32px);
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      box-shadow: 0 5px 14px rgba(15, 28, 77, 0.22);
-      transition: transform 0.16s cubic-bezier(.2,.8,.2,1), filter 0.16s ease;
+      overflow: hidden;
+      transition: transform 0.18s cubic-bezier(.2,.8,.2,1), filter 0.18s ease;
       -webkit-tap-highlight-color: transparent;
     }
-    .menu-image { display: none; }
+    .menu-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      object-position: center;
+    }
     .menu-open-btn:hover { transform: scale(1.025); }
     .menu-open-btn:hover .menu-image { filter: brightness(1.05); }
     .menu-open-btn:active,
@@ -1107,13 +1106,18 @@ CORPUS_HTML = """<!DOCTYPE html>
 
     .report-title { font-size: 24px; font-weight: 800; color: #10245c; margin: 0 0 4px; text-align: center; }
 
+    /* Блок с кнопками оценки загруженности.
+       Без рамки и фона: сами кнопки уже являются большими плашками. */
     .report-options {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      padding: 18px;
-      border-radius: var(--radius);
-      background: #eef1f6;
+      gap: 16px;
+      width: 100%;
+      padding: 8px 0 12px;
+      margin: 0;
+      background: transparent;
+      border: none;
+      box-shadow: none;
     }
 
     .report-btn {
@@ -1125,25 +1129,16 @@ CORPUS_HTML = """<!DOCTYPE html>
       background: none;
       position: relative;
       width: 100%;
-      height: 82px;
-      background: #ffffff;
-      transition: transform 0.16s cubic-bezier(.2,.8,.2,1), box-shadow 0.16s ease;
+      height: 86px;
+      transition: transform 0.18s cubic-bezier(.2,.8,.2,1), box-shadow 0.18s ease;
       -webkit-tap-highlight-color: transparent;
     }
-    .report-btn:hover { transform: scale(1.03); }
-    .report-btn.medium { transform: scale(1.01); }
-    .report-btn.medium:hover { transform: scale(1.07); }
+    .report-btn:hover { transform: scale(1.025); }
     .report-btn:active,
     .report-btn.is-pressed { transform: scale(1.06); }
     .report-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
     .report-btn:disabled { opacity: 0.7; cursor: default; }
-    .rbtn-img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: contain; /* Не растягиваем изображение и текст внутри него. */
-      object-position: center;
-    }
+    .rbtn-img { display: block; width: 100%; height: 100%; object-fit: fill; }
 
     .hover-dot {
       position: absolute;
@@ -1156,8 +1151,11 @@ CORPUS_HTML = """<!DOCTYPE html>
       transition: opacity 0.2s ease;
       pointer-events: none;
     }
-    .report-btn:hover .hover-dot,
-    .report-btn.is-pressed .hover-dot { animation: dotAppearDisappear 0.9s ease-in-out infinite; }
+    /* Белый кружок постоянно мягко появляется и исчезает.
+       На каждой кнопке свой небольшой сдвиг, поэтому движение выглядит живым. */
+    .report-btn .hover-dot { animation: dotAppearDisappear 1.8s ease-in-out infinite; }
+    .report-btn.medium .hover-dot { animation-delay: 0.35s; }
+    .report-btn.high .hover-dot { animation-delay: 0.7s; }
 
     @keyframes dotAppearDisappear {
       0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.55); }
@@ -1188,8 +1186,10 @@ CORPUS_HTML = """<!DOCTYPE html>
 
     footer {
       position: relative;
+      width: min(600px, 100%);
+      margin: 0 auto;
       text-align: center;
-      padding: 0 14px 14px;
+      padding: 0 22px 22px;
       color: #7a8090;
       font-size: 18px;
       font-weight: 700;
@@ -1305,17 +1305,21 @@ CORPUS_HTML = """<!DOCTYPE html>
         min-height: 0;
       }
 
+      footer {
+        width: 100%;
+        padding: 0 10px 18px;
+      }
+
       .menu-image {
         height: auto;
-        min-height: 76px;
+        min-height: 82px;
       }
 
       .menu-open-btn:hover { transform: none; }
 
       .report-options {
-        gap: 8px;
-        padding: 10px;
-        border-radius: 12px;
+        gap: 10px;
+        padding: 8px 0 10px;
       }
 
       .report-title {
@@ -1323,14 +1327,12 @@ CORPUS_HTML = """<!DOCTYPE html>
         line-height: 1.2;
       }
 
-      .report-btn:hover { transform: none; }
-      .report-btn.medium { transform: none; }
-      .report-btn.medium:hover { transform: none; }
-      .report-btn { height: 62px; }
+      .report-btn { height: 76px; }
+      .report-btn:hover { transform: scale(1.025); }
       .report-btn:active,
       .report-btn.is-pressed { transform: scale(1.06); }
-      .menu-button-wrap { margin-top: 14px; }
-      .menu-open-btn:hover { transform: none; }
+      .menu-button-wrap { margin-top: 10px; }
+      .menu-open-btn:hover { transform: scale(1.025); }
       .menu-open-btn:active,
       .menu-open-btn.is-pressed { transform: scale(1.08); }
 
@@ -1401,6 +1403,16 @@ CORPUS_HTML = """<!DOCTYPE html>
       .menu-modal-overlay { padding-top: 175px; }
       .menu-modal { max-height: calc(100vh - 181px); }
     }
+
+    /* Если пользователь отключил анимации в системе — уважаем эту настройку. */
+    @media (prefers-reduced-motion: reduce) {
+      .report-btn .hover-dot,
+      .map-pin.pin-changing .map-pin-img,
+      .menu-open-btn {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1463,16 +1475,17 @@ CORPUS_HTML = """<!DOCTYPE html>
       </button>
     </div>
 
-    <div class="menu-button-wrap">
-      <button type="button" class="menu-open-btn" id="menu-open-btn" aria-label="Открыть меню столовой" aria-haspopup="dialog">
-        Меню столовой
-      </button>
-    </div>
   </main>
 
   <footer>
     <div class="report-feedback" id="report-feedback">Спасибо, обновили!</div>
     <span class="footer-text" id="footer-text">УрФУ Столовая</span>
+
+    <div class="menu-button-wrap">
+      <button type="button" class="menu-open-btn" id="menu-open-btn" aria-label="Открыть меню" aria-haspopup="dialog">
+        <img class="menu-image" src="{{ url_for('static', filename='img/menu.png') }}" alt="Меню столовой">
+      </button>
+    </div>
   </footer>
 
   <!-- Модальное окно меню (Этап 3) -->
