@@ -372,17 +372,6 @@ INDEX_HTML = """<!DOCTYPE html>
     .map-pin:hover { transform: translate(-50%, -50%) scale(1.06); }
     .map-pin:active { transform: translate(-50%, -50%) scale(0.96); }
 
-    .map-pin.pin-changing .map-pin-img {
-      animation: pinStatusChange 0.65s cubic-bezier(.2,.8,.2,1);
-    }
-
-    @keyframes pinStatusChange {
-      0% { opacity: 1; transform: scale(1) rotate(0deg); }
-      35% { opacity: 0; transform: scale(.78) rotate(-5deg); }
-      65% { opacity: 0; transform: scale(1.12) rotate(5deg); }
-      100% { opacity: 1; transform: scale(1) rotate(0deg); }
-    }
-
     .map-pin-img {
       width: 100px;
       height: 100px;
@@ -858,10 +847,10 @@ CORPUS_HTML = """<!DOCTYPE html>
     .loc-feedback.error { color: #d63333; }
 
     .frame-box {
-      padding: 0;
+      padding: 14px;
       border-radius: var(--radius);
-      box-shadow: none;
-      background: transparent;
+      box-shadow: var(--shadow);
+      background: #eef1f6;
       margin: 0 0 26px;
     }
     .frame-box.plain { border: none; }
@@ -883,38 +872,27 @@ CORPUS_HTML = """<!DOCTYPE html>
       to   { opacity: 1; transform: scale(1); }
     }
 
-    .menu-button-wrap {
-      width: 100%;
-      margin: 18px 0 0;
-      display: flex;
-      justify-content: center;
-    }
-
     .menu-open-btn {
       display: block;
       width: 100%;
       padding: 0;
-      border: 0;
-      outline: 0;
-      background: transparent;
+      border: none;
+      background: none;
       cursor: pointer;
       border-radius: var(--radius);
       overflow: hidden;
-      transition: transform 0.16s cubic-bezier(.2,.8,.2,1), filter 0.16s ease;
-      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.12s ease;
     }
     .menu-image {
       display: block;
       width: 100%;
-      height: auto;
-      object-fit: contain;
+      height: 124px;
+      object-fit: cover;
       object-position: center;
     }
-    .menu-open-btn:hover { transform: scale(1.025); }
+    .menu-open-btn:hover { transform: scale(1.05); }
     .menu-open-btn:hover .menu-image { filter: brightness(1.05); }
-    .menu-open-btn:active,
-    .menu-open-btn.is-pressed { transform: scale(1.08); }
-    .menu-open-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 4px; }
+    .menu-open-btn:active { transform: scale(0.98); }
 
     /* ===== Модальное окно меню (Этап 3): bottom sheet ===== */
     .menu-modal-overlay {
@@ -1122,19 +1100,14 @@ CORPUS_HTML = """<!DOCTYPE html>
       cursor: pointer;
       background: none;
       position: relative;
-      width: 100%;
-      height: 66px;
-      transition: transform 0.16s cubic-bezier(.2,.8,.2,1), box-shadow 0.16s ease;
-      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
     }
     .report-btn:hover { transform: scale(1.03); }
     .report-btn.medium { transform: scale(1.01); }
     .report-btn.medium:hover { transform: scale(1.07); }
-    .report-btn:active,
-    .report-btn.is-pressed { transform: scale(1.06); }
-    .report-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+    .report-btn:active { transform: scale(0.96); }
     .report-btn:disabled { opacity: 0.7; cursor: default; }
-    .rbtn-img { display: block; width: 100%; height: 100%; object-fit: fill; }
+    .rbtn-img { display: block; width: 100%; height: auto; }
 
     .hover-dot {
       position: absolute;
@@ -1147,13 +1120,7 @@ CORPUS_HTML = """<!DOCTYPE html>
       transition: opacity 0.2s ease;
       pointer-events: none;
     }
-    .report-btn:hover .hover-dot,
-    .report-btn.is-pressed .hover-dot { animation: dotAppearDisappear 0.9s ease-in-out infinite; }
-
-    @keyframes dotAppearDisappear {
-      0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.55); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    }
+    .report-btn:hover .hover-dot { opacity: 1; }
     .report-btn.low .hover-dot    { left: 5.7%; top: 52%; background: #eef1f6; }
     .report-btn.medium .hover-dot { left: 6.4%; top: 53%; background: #eef1f6; }
     .report-btn.high .hover-dot   { left: 6.2%; top: 48.3%; background: #eef1f6; }
@@ -1284,11 +1251,9 @@ CORPUS_HTML = """<!DOCTYPE html>
       .loc-save-btn { width: 100%; }
 
       .frame-box {
-        padding: 0;
+        padding: 8px;
         margin-bottom: 14px;
         border-radius: 12px;
-        box-shadow: none;
-        background: transparent;
       }
 
       .card-img {
@@ -1317,13 +1282,6 @@ CORPUS_HTML = """<!DOCTYPE html>
       .report-btn:hover { transform: none; }
       .report-btn.medium { transform: none; }
       .report-btn.medium:hover { transform: none; }
-      .report-btn { height: 62px; }
-      .report-btn:active,
-      .report-btn.is-pressed { transform: scale(1.06); }
-      .menu-button-wrap { margin-top: 14px; }
-      .menu-open-btn:hover { transform: none; }
-      .menu-open-btn:active,
-      .menu-open-btn.is-pressed { transform: scale(1.08); }
 
       .menu-modal-overlay {
         padding: 0;
@@ -1438,6 +1396,13 @@ CORPUS_HTML = """<!DOCTYPE html>
       </div>
     </div>
 
+    <div class="frame-box plain">
+      <button type="button" class="menu-open-btn" id="menu-open-btn" aria-label="Открыть меню" aria-haspopup="dialog">
+        <img class="menu-image" src="{{ url_for('static', filename='img/menu.png') }}"
+             alt="Меню">
+      </button>
+    </div>
+
     <div class="report-options">
       <h2 class="report-title">Оцените загруженность сейчас</h2>
       <button class="report-btn low" data-load="low" type="button" aria-label="Свободно">
@@ -1451,12 +1416,6 @@ CORPUS_HTML = """<!DOCTYPE html>
       <button class="report-btn high" data-load="high" type="button" aria-label="Много народу">
         <img class="rbtn-img" src="{{ url_for('static', filename='img/btn-load-high.png') }}" alt="Много народу">
         <span class="hover-dot"></span>
-      </button>
-    </div>
-
-    <div class="menu-button-wrap">
-      <button type="button" class="menu-open-btn" id="menu-open-btn" aria-label="Открыть меню" aria-haspopup="dialog">
-        <img class="menu-image" src="{{ url_for('static', filename='img/menu.png') }}" alt="Меню столовой">
       </button>
     </div>
   </main>
@@ -1554,13 +1513,6 @@ def index():
         INDEX_HTML, corpuses=corpuses, role=role, role_name=role_name,
         csrf_token=get_csrf_token(),
     )
-
-
-@app.route("/api/loads")
-def api_loads():
-    """Возвращает актуальную загруженность всех корпусов для плавного обновления карты."""
-    return jsonify({code: _CURRENT_LOADS.get(code, default_load)
-                    for _, code, _, default_load, _, _ in _CORPS})
 
 
 @app.route("/corpus/<corpus_id>")

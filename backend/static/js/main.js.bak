@@ -93,41 +93,6 @@
         }
       });
     }
-
-    // Плавно обновляем статусы меток на карте без перезагрузки страницы.
-    var pins = document.querySelectorAll(".map-pin");
-    var loadToPin = { low: "pin-low-", medium: "pin-medium-", high: "pin-high-" };
-    function refreshMapLoads() {
-      fetch("/api/loads", { cache: "no-store" })
-        .then(function (resp) { return resp.json(); })
-        .then(function (loads) {
-          Array.prototype.forEach.call(pins, function (pin) {
-            var href = pin.getAttribute("href") || "";
-            var code = href.split("/").filter(Boolean).pop();
-            var nextLoad = loads[code];
-            var img = pin.querySelector(".map-pin-img");
-            if (!img || !nextLoad) return;
-            var current = (img.getAttribute("src") || "").match(/pin-(low|medium|high)-/);
-            var currentLoad = current ? current[1] : null;
-            if (currentLoad === nextLoad) return;
-            var base = img.getAttribute("src").replace(/pin-(low|medium|high)-/, loadToPin[nextLoad]);
-            pin.classList.remove("pin-changing");
-            void pin.offsetWidth;
-            pin.classList.add("pin-changing");
-            setTimeout(function () {
-              img.setAttribute("src", base);
-            }, 220);
-            setTimeout(function () {
-              pin.classList.remove("pin-changing");
-            }, 700);
-          });
-        })
-        .catch(function () {});
-    }
-    if (pins.length) {
-      refreshMapLoads();
-      window.setInterval(refreshMapLoads, 4000);
-    }
     return;
   }
 
@@ -242,24 +207,7 @@
 
   // ===== Модальное окно меню (Этап 3) =====
   var menuOpenBtn = document.getElementById("menu-open-btn");
-
-  function addPressAnimation(button) {
-    if (!button) return;
-    ["pointerdown", "touchstart"].forEach(function (eventName) {
-      button.addEventListener(eventName, function () {
-        button.classList.add("is-pressed");
-      }, { passive: true });
-    });
-    ["pointerup", "pointercancel", "mouseleave", "touchend", "touchcancel"].forEach(function (eventName) {
-      button.addEventListener(eventName, function () {
-        window.setTimeout(function () { button.classList.remove("is-pressed"); }, 120);
-      }, { passive: true });
-    });
-  }
-
-  Array.prototype.forEach.call(buttons, addPressAnimation);
   var menuModal = document.getElementById("menu-modal");
-  addPressAnimation(menuOpenBtn);
   var menuModalBody = document.getElementById("menu-modal-body");
   var menuCloseBtn = document.getElementById("menu-modal-close");
   var menuGuestNote = document.getElementById("menu-guest-note");
