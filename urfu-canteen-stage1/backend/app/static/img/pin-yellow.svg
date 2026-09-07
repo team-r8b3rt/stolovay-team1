@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="80" viewBox="0 0 64 80">
-  <!-- Временный вариант капельки-пина (жёлтая). Заменить на финальный дизайн. -->
-  <path d="M32 4 C18 4 8 14.5 8 28 C8 46 32 76 32 76 C32 76 56 46 56 28 C56 14.5 46 4 32 4 Z"
-        fill="#e5b800" stroke="#ffffff" stroke-width="3"/>
-  <circle cx="32" cy="28" r="11" fill="#ffffff"/>
-</svg>

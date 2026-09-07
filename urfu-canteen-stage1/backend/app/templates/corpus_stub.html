@@ -5,8 +5,8 @@
 {% block content %}
   <!-- Заглушка Этапа 2. Реальная страница корпуса — см. docs/stage-2.md -->
   <div class="stub-page">
+    <a class="btn-back" href="{{ url_for('main.index') }}">← Назад на главную</a>
     <h1>{{ corpus.name if corpus else "Корпус не найден" }}</h1>
     <p>Страница этой столовой в разработке (Этап 2).</p>
-    <a class="btn-back" href="{{ url_for('main.index') }}">← Назад на главную</a>
   </div>
 {% endblock %}

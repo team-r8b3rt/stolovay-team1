@@ -13,13 +13,6 @@ bp = Blueprint("main", __name__)
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 CORPUSES_FILE = os.path.join(DATA_DIR, "corpuses.json")
 
-# Соответствие уровня загруженности имени файла-капельки
-LOAD_TO_PIN = {
-    "low": "pin-green.svg",
-    "medium": "pin-yellow.svg",
-    "high": "pin-red.svg",
-}
-
 
 def load_corpuses():
     """Читает corpuses.json и возвращает список корпусов."""
@@ -30,9 +23,6 @@ def load_corpuses():
 @bp.route("/")
 def index():
     corpuses = load_corpuses()
-    # Добавляем каждому корпусу имя файла капельки по его загруженности
-    for corpus in corpuses:
-        corpus["pin"] = LOAD_TO_PIN.get(corpus.get("load"), "pin-green.svg")
     return render_template("index.html", corpuses=corpuses)
 
 
