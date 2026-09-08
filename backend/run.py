@@ -6,7 +6,7 @@
   run.py            — этот файл: сервер и вся логика на Python
   templates/        — HTML-страницы (index.html, corpus.html)
   static/           — картинки и скрипты (css внутри шаблонов, js в static/js)
-  data/             — «живые» данные (загруженность, меню), создаются при старте
+  data/             — меню и расположения (JSON), голоса и votes.db (SQLite)
 
 Запуск:  python run.py
 Открыть: http://127.0.0.1:5000/
@@ -15,9 +15,11 @@ import json
 import os
 import secrets
 import threading
-import time
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+
+# Модуль голосования (голоса в SQLite, расчёт статуса) — см. vote.py.
+from vote import cast_vote, compute_status, vote_bp
 
 # ===== Папки проекта =====================================================
 # Все папки задаём явно (относительно этого файла), чтобы сервер работал
@@ -33,13 +35,16 @@ app = Flask(
 
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(16)
 
+# Регистрируем маршруты голосования (/vote и /status/<id>) из vote.py.
+app.register_blueprint(vote_bp)
+
 # Секретный ключ нужен для сессий (кто сейчас «работник», CSRF-токен и т.д.).
 # В реальном проекте задаётся через переменную окружения SECRET_KEY.
 
 # ===== Данные о корпусах ================================================
-# Статика (имена, расположение, позиции меток) — здесь.
-# «Живое» состояние (загруженность, расположение, меню) — в JSON-файлах
-# папки data/, чтобы его можно было менять без правки кода.
+# Статика (имена, расположение, позиции меток) — здесь (список _CORPS ниже).
+# Расположение столовых и меню — в JSON-файлах папки data/ (меняются без
+# правки кода). Загруженность считается по голосам из votes.db (см. vote.py).
 
 
 def _make_pins(corpus_code):
@@ -54,7 +59,6 @@ _CORPS = [
     ("ОЦК",      "cimt", "2 этаж, атриум", "high", 17, 70),
 ]
 
-_LOAD_FILE = os.path.join(_DATA_DIR, "load.json")
 _LOCATIONS_FILE = os.path.join(_DATA_DIR, "locations.json")
 _MENU_FILE = os.path.join(_DATA_DIR, "menu.json")
 
@@ -65,8 +69,7 @@ os.makedirs(_DATA_DIR, exist_ok=True)
 _IO_LOCK = threading.Lock()
 
 
-# Значения по умолчанию — fallback, если JSON-файл отсутствует или битый.
-DEFAULT_LOADS = {code: load for name, code, loc, load, x, y in _CORPS}
+# Значение по умолчанию для расположений — fallback, если JSON-файл битый.
 DEFAULT_LOCATIONS = {code: loc for name, code, loc, load, x, y in _CORPS}
 
 
@@ -89,8 +92,8 @@ def _save_json(path, data):
         os.replace(tmp, path)
 
 
-# Актуальные значения загруженности и расположений, загруженные при старте.
-_CURRENT_LOADS = _load_json(_LOAD_FILE, DEFAULT_LOADS)
+# Актуальные расположения столовых, загруженные при старте.
+# (Загруженность хранится в голосах SQLite — см. module vote.py.)
 _CURRENT_LOCATIONS = _load_json(_LOCATIONS_FILE, DEFAULT_LOCATIONS)
 
 
@@ -160,14 +163,20 @@ def corpus_by_id(corpus_id):
 def corpus_dict(entry):
     """Превращает кортеж корпуса в словарь для шаблона (с актуальными данными)."""
     name, code, canteen_location, default_load, x, y = entry
+    stat = compute_status(code)
+    nodata = stat["status"] == "NO_DATA"
     return {
         "id": code,
         "name": name,
         "canteen_location": _CURRENT_LOCATIONS.get(code, canteen_location),
-        "load": _CURRENT_LOADS.get(code, default_load),
+        # Если голосов мало (NO_DATA) — показываем уровень по умолчанию.
+        "load": default_load if nodata else stat["status"],
         "pin_x": x,
         "pin_y": y,
         "pin_files": _make_pins(code),
+        "confidence": stat["confidence"],
+        "votes": stat["total_votes"],
+        "status_nodata": nodata,
     }
 
 
@@ -301,14 +310,24 @@ def corpus(corpus_id):
 
 @app.route("/api/loads")
 def api_loads():
-    """Актуальная загруженность всех корпусов (для плавного обновления карты)."""
-    return jsonify({code: _CURRENT_LOADS.get(code, default_load)
-                    for _, code, _, default_load, _, _ in _CORPS})
+    """Загруженность всех корпусов для карты на главной (уровень + метрики)."""
+    result = {}
+    for entry in _CORPS:
+        name, code, canteen_location, default_load, x, y = entry
+        stat = compute_status(code)
+        nodata = stat["status"] == "NO_DATA"
+        result[code] = {
+            "load": default_load if nodata else stat["status"],
+            "confidence": stat["confidence"],
+            "votes": stat["total_votes"],
+            "nodata": nodata,
+        }
+    return jsonify(result)
 
 
 @app.route("/corpus/<corpus_id>/report-load", methods=["POST"])
 def report_load(corpus_id):
-    """Сохраняет новую загруженность столовой, отправленную кнопкой на странице."""
+    """Сохраняет голос за загруженность (адрес, который зовут кнопки на странице)."""
     entry = corpus_by_id(corpus_id)
     if entry is None:
         return jsonify({"error": "Корпус не найден"}), 404
@@ -317,17 +336,20 @@ def report_load(corpus_id):
     if new_load not in ("low", "medium", "high"):
         return jsonify({"error": "Недопустимое значение load"}), 400
 
-    # Простая защита от накрутки: не чаще одной оценки в 3 секунды с устройства.
-    now = time.time()
-    last = session.get("_last_report", 0)
-    if now - last < 3:
-        return jsonify({"error": "Слишком часто! Подождите пару секунд."}), 429
-    session["_last_report"] = now
+    # Кладём голос в базу; cast_vote сам проверит «не чаще раза в 5 минут».
+    result, code = cast_vote(corpus_id, new_load)
+    if code != 200:
+        return jsonify(result), code
 
-    _CURRENT_LOADS[corpus_id] = new_load
-    _save_json(_LOAD_FILE, _CURRENT_LOADS)
-    load_name, load_desc = LOAD_DESCRIPTIONS[new_load]
-    return jsonify({"load": new_load, "load_name": load_name, "load_desc": load_desc})
+    # Ответ отдаём в прежнем виде, чтобы страница умела показывать сообщения.
+    nodata = result["status"] == "NO_DATA"
+    level = entry[3] if nodata else result["status"]  # при NO_DATA — уровень по умолчанию
+    load_name, load_desc = LOAD_DESCRIPTIONS[level]
+    result["load"] = level
+    result["load_name"] = load_name
+    result["load_desc"] = load_desc
+    result["nodata"] = nodata
+    return jsonify(result)
 
 
 @app.route("/corpus/<corpus_id>/canteen-location", methods=["POST"])

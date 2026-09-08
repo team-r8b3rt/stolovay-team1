@@ -1,8 +1,8 @@
-// Оценка загруженности на странице корпуса (Этап 2).
-// Кнопки отправляют POST /corpus/<id>/report-load и обновляют блок
-// расшифровки без перезагрузки страницы.
-// В админ-режиме — редактирование расположения столовой (POST canteen-location).
-// На главной — плашка входа администратора (справа сверху).
+// Скрипт страниц: главная (карта и вход работника) и корпус (оценка
+// загруженности, меню столовой).
+// На корпусе кнопки оценки отправляют POST /corpus/<id>/report-load и
+// обновляют статусы (поллинг /status) без перезагрузки страницы.
+// Для работника — там же редактирование расположения столовой и меню.
 
 (function () {
   // document.currentScript c defer-скриптами работает не во всех браузерах
@@ -104,9 +104,13 @@
           Array.prototype.forEach.call(pins, function (pin) {
             var href = pin.getAttribute("href") || "";
             var code = href.split("/").filter(Boolean).pop();
-            var nextLoad = loads[code];
+            var info = loads[code];
             var img = pin.querySelector(".map-pin-img");
-            if (!img || !nextLoad) return;
+            if (!img || !info) return;
+            // Мало голосов (NO_DATA) — метка серая.
+            pin.classList.toggle("pin-nodata", !!info.nodata);
+            var nextLoad = info.load;
+            if (!nextLoad) return;
             var current = (img.getAttribute("src") || "").match(/pin-(low|medium|high)-/);
             var currentLoad = current ? current[1] : null;
             if (currentLoad === nextLoad) return;
@@ -137,17 +141,24 @@
 
   var buttons = document.querySelectorAll(".report-btn");
   var loadCard = document.getElementById("load-card");
+  var loadStats = document.getElementById("load-stats");
   var feedback = document.getElementById("report-feedback");
   var footerDiv = document.querySelector("footer");
 
-  function applyLoad(newLoad) {
+  var currentLoad = null;      // уровень, показанный на плашке статуса
+  var _reportPending = false;  // идёт ли сейчас наш собственный запрос голоса
+  var _pausePollUntil = 0;     // не трогать статус/точку до этого времени
+  var _unlockTimer = null;     // таймер обратного отсчёта блокировки кнопок
+
+  function applyLoad(newLoad, nodata) {
     loadCard.classList.remove("load-low", "load-medium", "load-high");
     loadCard.classList.add("load-" + newLoad);
+    loadCard.classList.toggle("load-nodata", !!nodata);
   }
 
-  function setSelected(load) {
+  function setSelected(load, nodata) {
     Array.prototype.forEach.call(buttons, function (b) {
-      b.classList.toggle("selected", b.getAttribute("data-load") === load);
+      b.classList.toggle("selected", !nodata && b.getAttribute("data-load") === load);
     });
   }
 
@@ -157,8 +168,34 @@
     btn.classList.add("dot-flash");
   }
 
-  var matchLoad = (loadCard.className || "").match(/load-(low|medium|high)/);
-  if (matchLoad) setSelected(matchLoad[1]);
+  // Строка с числом голосов и доверием под плашкой статуса.
+  function renderStats(info) {
+    if (!loadStats || !info) return;
+    if (info.nodata || info.status === "NO_DATA") {
+      loadStats.textContent = "Пока мало оценок — статус по умолчанию.";
+    } else {
+      loadStats.textContent = "Оценок за 30 мин: " + info.votes +
+        " · доверие " + Math.round((info.confidence || 0) * 100) + "%";
+    }
+  }
+
+  // Применяем свежий статус: серую плашку при «мало данных» и точки без выбора.
+  function applyStatus(info) {
+    if (!info || !info.status) return;
+    var nodata = info.status === "NO_DATA";
+    var level = nodata ? currentLoad : info.status;
+    if (!level) level = "low";
+    if (!nodata) currentLoad = level;
+    applyLoad(level, nodata);
+    setSelected(level, nodata);
+  }
+
+  // Стартовое состояние: уровень и «мало оценок» уже пришли с сервером в HTML.
+  var initLoadMatch = (loadCard.className || "").match(/load-(low|medium|high)/);
+  if (initLoadMatch) {
+    currentLoad = initLoadMatch[1];
+    setSelected(currentLoad, loadCard.classList.contains("load-nodata"));
+  }
 
   function showFeedback(text, autoHide) {
     feedback.textContent = text;
@@ -173,6 +210,42 @@
     }
   }
 
+  // После успешного голоса кнопки блокируются на 5 минут (столько же
+  // запрещает повторный голос сервер), а вместо статов — обратный отсчёт.
+  function lockButtons() {
+    var left = 300;
+    if (loadStats) loadStats.textContent = "Вы голосовали. Следующий голос через 5:00";
+    clearInterval(_unlockTimer);
+    _unlockTimer = window.setInterval(function () {
+      left -= 1;
+      if (loadStats && left >= 0) {
+        var mm = Math.floor(left / 60);
+        var ss = (left % 60 < 10 ? "0" : "") + (left % 60);
+        loadStats.textContent = "Вы голосовали. Следующий голос через " + mm + ":" + ss;
+      }
+      if (left <= 0) {
+        clearInterval(_unlockTimer);
+        _unlockTimer = null;
+        Array.prototype.forEach.call(buttons, function (b) { b.disabled = false; });
+        refreshStatus(); // вернёт строку с голосами на место
+      }
+    }, 1000);
+  }
+
+  // Тихий поллинг: статус меняется и от чужих голосов, без нажатий.
+  function refreshStatus() {
+    if (_reportPending) return;
+    if (Date.now() < _pausePollUntil) return;
+    fetch("/status/" + corpusId, { cache: "no-store" })
+      .then(function (resp) { return resp.json(); })
+      .then(function (info) {
+        if (!info || !info.status) return;
+        applyStatus(info);
+        if (!_unlockTimer) renderStats(info);
+      })
+      .catch(function () {});
+  }
+
   Array.prototype.forEach.call(buttons, function (btn) {
     btn.addEventListener("click", function () {
       var load = btn.getAttribute("data-load");
@@ -180,10 +253,11 @@
       // сразу показываем выбранную кнопку
       // (даже если потом не получится обновить, точка-маркер остаётся
       //  на последнем месте нажатия — мы её никуда не возвращаем)
-      setSelected(load);
+      setSelected(load, false);
       flashDot(btn);
 
       // на время запроса блокируем кнопки, чтобы не слать повторно
+      _reportPending = true;
       Array.prototype.forEach.call(buttons, function (b) { b.disabled = true; });
 
       fetch("/corpus/" + corpusId + "/report-load", {
@@ -191,23 +265,36 @@
         headers: csrfHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ load: load }),
       })
-        .then(function (resp) { return resp.json(); })
-        .then(function (data) {
-          if (data.error) {
-            throw new Error(data.error);
-          }
-          applyLoad(data.load);
-          setSelected(data.load);
-          showFeedback("Спасибо, обновили!", true);
+        .then(function (resp) {
+          return resp.json().then(function (data) {
+            return { ok: resp.ok, data: data };
+          });
         })
-        .catch(function () {
-          showFeedback("Не получилось обновить. Попробуйте ещё раз.", false);
+        .then(function (res) {
+          if (!res.ok || res.data && res.data.error) {
+            throw new Error((res.data && res.data.error) || "Ошибка запроса");
+          }
+          applyStatus(res.data);
+          showFeedback("Спасибо, обновили!", true);
+          lockButtons();
+        })
+        .catch(function (err) {
+          // Показываем текст ошибки сервера (например «вы уже голосовали»)
+          // и ненадолго отключаем автообновление, чтобы не дёргать точку.
+          showFeedback((err && err.message) || "Не получилось обновить. Попробуйте ещё раз.", false);
+          _pausePollUntil = Date.now() + 4000;
         })
         .finally(function () {
-          Array.prototype.forEach.call(buttons, function (b) { b.disabled = false; });
+          _reportPending = false;
+          var stillLocked = !!_unlockTimer;
+          Array.prototype.forEach.call(buttons, function (b) { b.disabled = stillLocked; });
         });
     });
   });
+
+  // Сразу проверяем статус и дальше обновляем каждые 3 секунды.
+  refreshStatus();
+  window.setInterval(refreshStatus, 3000);
 
   // Редактирование расположения (только в админ-режиме)
   var locEditBtn = document.getElementById("loc-edit-btn");
@@ -262,7 +349,7 @@
     });
   }
 
-  // ===== Модальное окно меню (Этап 3) =====
+  // ===== Модальное окно меню =====
   var menuOpenBtn = document.getElementById("menu-open-btn");
 
   function addPressAnimation(button) {

@@ -173,6 +173,18 @@
     .load-card.load-medium .card-img-medium { display: block; animation: cardFade 0.8s ease; }
     .load-card.load-high   .card-img-high { display: block; animation: cardFade 0.8s ease; }
 
+    /* Режим «мало данных»: картинку показываем серым и слегка прозрачной. */
+    .load-card.load-nodata .card-img { filter: grayscale(1); opacity: 0.55; }
+
+    /* Строка с числом голосов и доверием под плашкой статуса. */
+    .load-stats {
+      margin: 10px 0 0;
+      text-align: center;
+      color: #5a6580;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
     @keyframes cardFade {
       from { opacity: 0; transform: scale(0.96); }
       to   { opacity: 1; transform: scale(1); }
@@ -212,7 +224,7 @@
     .menu-open-btn.is-pressed { transform: scale(1.08); }
     .menu-open-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 4px; }
 
-    /* ===== Модальное окно меню (Этап 3): bottom sheet ===== */
+    /* ===== Модальное окно меню: bottom sheet ===== */
     .menu-modal-overlay {
       position: fixed;
       top: 0;
@@ -612,8 +624,6 @@
         min-height: 108px;
       }
 
-      .menu-open-btn:hover { transform: none; }
-
       .report-options {
         gap: 10px;
         padding: 12px 14px;
@@ -746,7 +756,7 @@
     {% endif %}
 
     <div class="frame-box">
-      <div class="load-card load-{{ corpus.load }}" id="load-card">
+      <div class="load-card load-{{ corpus.load }}{{ ' load-nodata' if corpus.status_nodata }}" id="load-card">
         <img class="card-img card-img-low" src="{{ url_for('static', filename='img/card-load-low.png') }}"
              alt="Свободно">
         <img class="card-img card-img-medium" src="{{ url_for('static', filename='img/card-load-medium.png') }}"
@@ -754,6 +764,13 @@
         <img class="card-img card-img-high" src="{{ url_for('static', filename='img/card-load-high.png') }}"
              alt="Много народу">
       </div>
+      <p class="load-stats" id="load-stats">
+        {%- if corpus.status_nodata %}
+          Пока мало оценок — статус по умолчанию.
+        {%- else %}
+          Оценок за 30 мин: {{ corpus.votes }} · доверие {{ '%.0f' % (corpus.confidence * 100) }}%
+        {%- endif %}
+      </p>
     </div>
 
     <div class="report-options">
@@ -783,7 +800,7 @@
 
     <div class="footer-brand">
       <div class="report-feedback" id="report-feedback">Спасибо, обновили!</div>
-      <span class="footer-text" id="footer-text">УрФУ Столовая</span>
+      <span class="footer-text">УрФУ Столовая</span>
     </div>
   </footer>
 
@@ -799,7 +816,7 @@
         <button type="button" class="menu-modal-close" id="menu-modal-close" aria-label="Закрыть меню">&times;</button>
       </div>
       <div class="menu-modal-body" id="menu-modal-body">
-        <p class="menu-empty" id="menu-loading">Загружаем меню…</p>
+        <p class="menu-empty">Загружаем меню…</p>
       </div>
       <div class="menu-admin-note" id="menu-guest-note" hidden>
         Чтобы изменить меню — войдите как администратор.

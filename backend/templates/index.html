@@ -10,9 +10,10 @@
     :root {
       --color-primary: #0f1c4d;
       --color-primary-light: #1c2f78;
---color-accent: #e5b800;
+      --color-accent: #e5b800;
       --color-bg: #e6e6e6;
       --color-text: #1a1a1a;
+      --color-text-muted: #5a6580;
       --color-load-low: #2e9e4f;
       --color-load-medium: #ffbf00;
       --color-load-high: #d63333;
@@ -168,6 +169,12 @@
 
     .map-pin.pin-changing .map-pin-img {
       animation: pinStatusChange 0.9s cubic-bezier(.2,.8,.2,1);
+    }
+
+    /* Мало голосов (NO_DATA): метка серая и полупрозрачная. */
+    .map-pin.pin-nodata .map-pin-img {
+      filter: grayscale(1) brightness(0.92);
+      opacity: 0.55;
     }
 
     @keyframes pinStatusChange {
@@ -487,9 +494,9 @@
         <button type="button" class="admin-modal-close" id="admin-modal-close">Закрыть</button>
       </div>
     </div>
-    <script defer src="{{ url_for('static', filename='js/main.js') }}"
-            data-page="index"
-            data-csrf="{{ csrf_token }}"></script>
   {% endif %}
+  <script defer src="{{ url_for('static', filename='js/main.js') }}"
+          data-page="index"
+          data-csrf="{{ csrf_token }}"></script>
 </body>
 </html>
