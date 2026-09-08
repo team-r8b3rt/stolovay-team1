@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="image/png">
+  <title>УрФУ Столовая — главная</title>
+  <style>
+    /* ===== Фирменные цвета ===== */
+    :root {
+      --color-primary: #0f1c4d;
+      --color-primary-light: #1c2f78;
+--color-accent: #e5b800;
+      --color-bg: #e6e6e6;
+      --color-text: #1a1a1a;
+      --color-load-low: #2e9e4f;
+      --color-load-medium: #ffbf00;
+      --color-load-high: #d63333;
+      --color-cream: #fbf7ee;
+      --color-wine: #7c0921;
+      --radius: 16px;
+      --shadow: 0 4px 14px rgba(15, 28, 77, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      overflow-x: hidden;
+    }
+
+    /* ===== Шапка ===== */
+    .site-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 22px;
+      background: var(--color-primary);
+      color: #ffffff;
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+
+    .brand-logo-link { display: inline-flex; line-height: 0; }
+
+    .brand-logo {
+      width: 125px;
+      height: 125px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .brand-title {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      margin-left: 14px;
+      color: var(--color-cream);
+    }
+
+    .role-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .role-label { font-size: 22px; color: #d9ddee; margin-right: 8px; }
+    .role-label strong { color: #ff5252; }
+
+    .role-prefix {
+      font-size: 24px;
+      font-style: italic;
+      font-weight: 500;
+      letter-spacing: 1px;
+      color: #f4efe2;
+    }
+
+    /* Кнопка входа/выхода */
+    .btn-role {
+      background: var(--color-cream);
+      color: var(--color-wine);
+      border: 2px solid var(--color-wine);
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.15;
+      padding: 14px 22px;
+      min-height: 58px;
+      margin-right: -6px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(124, 9, 33, 0.28);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .btn-role:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(124, 9, 33, 0.35);
+    }
+
+    .btn-role:active { transform: scale(0.96); }
+
+    /* ===== Карта кампуса ===== */
+    .map-section {
+      padding: 4px 20px 20px;
+      max-width: 600px;
+      margin: 0 auto;
+      min-height: calc(100vh - 170px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .map-title {
+      font-size: clamp(19px, 5.2vw, 37px);
+      font-weight: 900;
+      width: fit-content;
+      white-space: nowrap;
+      margin: 4px auto 22px;
+      color: #10245c;
+      text-align: center;
+      letter-spacing: 0.5px;
+      transform: translate(-1px, -10px);
+    }
+
+    .map-title::after {
+      content: "";
+      display: block;
+      width: calc(100% - 180px);
+      margin: 6px auto 0;
+      height: 5px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--color-accent), var(--color-wine));
+    }
+
+    .campus-map-wrap {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      background: #eef1f6;
+    }
+
+    .campus-map-img { width: 100%; height: auto; display: block; }
+
+    /* Метки загруженности */
+    .map-pin {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      z-index: 2;
+      filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.35));
+      transition: transform 0.12s ease;
+    }
+
+    .map-pin:hover { transform: translate(-50%, -50%) scale(1.06); }
+    .map-pin:active { transform: translate(-50%, -50%) scale(0.96); }
+
+    .map-pin.pin-changing .map-pin-img {
+      animation: pinStatusChange 0.9s cubic-bezier(.2,.8,.2,1);
+    }
+
+    @keyframes pinStatusChange {
+      0% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
+      28% { opacity: 0; transform: scale(.72) rotate(-6deg); filter: blur(2px); }
+      58% { opacity: 0; transform: scale(1.14) rotate(6deg); filter: blur(2px); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); }
+    }
+
+    .map-pin-img {
+      width: 100px;
+      height: 100px;
+      border-radius: 4px;
+      object-fit: cover;
+    }
+
+    /* ===== Легенда цветов ===== */
+    .load-legend {
+      list-style: none;
+      padding: 20px 26px;
+      margin: 22px 0 0;
+      font-size: 19px;
+      background: #e2e2e2;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .load-legend li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 0;
+    }
+
+    .legend-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-dot.dot-low    { background: var(--color-load-low); }
+    .legend-dot.dot-medium { background: var(--color-load-medium); }
+    .legend-dot.dot-high   { background: var(--color-load-high); }
+
+    .map-hint {
+      text-align: center;
+      color: #5a6580;
+      font-size: 18px;
+      font-weight: 500;
+      margin: 18px 0 0;
+    }
+
+    /* ===== Мобильные устройства (до 600px) ===== */
+    @media (max-width: 599px) {
+      /* Мобильная версия: изменения действуют только до 599px.
+         Десктопная вёрстка выше не затрагивается. */
+      .site-header {
+        padding: 12px 14px 14px;
+        gap: 10px;
+      }
+
+      .brand {
+        width: 100%;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .brand-logo {
+        width: 68px;
+        height: 68px;
+        flex: 0 0 68px;
+      }
+
+      .brand-title {
+        min-width: 0;
+        font-size: 21px;
+        line-height: 1.15;
+        margin-left: 0;
+        overflow-wrap: anywhere;
+      }
+
+      .role-box {
+        width: 100%;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .role-label {
+        margin-right: 0;
+        font-size: 16px;
+        text-align: center;
+      }
+
+      .role-prefix { font-size: 17px; }
+
+      .btn-role {
+        width: 100%;
+        margin-right: 0;
+        min-height: 48px;
+        padding: 10px 14px;
+        font-size: 16px;
+      }
+
+      .map-section {
+        width: 100%;
+        padding: 12px 10px 18px;
+        min-height: auto;
+      }
+
+      .map-title {
+        max-width: 100%;
+        white-space: normal;
+        font-size: clamp(20px, 7vw, 30px);
+        line-height: 1.15;
+        margin: 4px auto 16px;
+        transform: none;
+      }
+
+      .map-title::after {
+        width: 55%;
+        height: 4px;
+      }
+
+      .campus-map-wrap { border-radius: 12px; }
+
+      .map-pin-img {
+        width: clamp(54px, 18vw, 76px);
+        height: clamp(54px, 18vw, 76px);
+      }
+
+      .load-legend {
+        margin-top: 14px;
+        padding: 12px 14px;
+        font-size: 15px;
+      }
+
+      .load-legend li {
+        gap: 9px;
+        padding: 7px 0;
+        line-height: 1.25;
+      }
+
+      .legend-dot {
+        width: 14px;
+        height: 14px;
+      }
+
+      .map-hint {
+        font-size: 14px;
+        line-height: 1.35;
+        margin-top: 12px;
+      }
+
+      .admin-modal {
+        top: 12px;
+        right: 12px;
+        width: calc(100vw - 24px);
+        padding: 16px;
+      }
+
+      .admin-modal-actions {
+        flex-direction: column;
+      }
+
+      .admin-modal-login,
+      .admin-modal-close {
+        width: 100%;
+      }
+    }
+
+    /* ===== Плашка входа администратора (справа сверху) ===== */
+    .admin-modal {
+      position: fixed;
+      top: 130px;
+      right: 18px;
+      z-index: 50;
+      width: min(400px, calc(100vw - 24px));
+      background: #ffffff;
+      color: var(--color-text);
+      border: 3px solid var(--color-primary);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px rgba(15, 28, 77, 0.35);
+      padding: 22px;
+      display: none;
+    }
+    .admin-modal.open { display: block; }
+
+    .admin-modal-title {
+      margin: 0 0 4px;
+      font-size: 21px;
+      font-weight: 800;
+      color: #10245c;
+    }
+    .admin-modal-sub { margin: 0 0 14px; font-size: 15px; color: var(--color-text-muted); }
+
+    .admin-modal-input {
+      width: 100%;
+      padding: 14px 14px;
+      font-size: 18px;
+      border: 2px solid #ccd0dc;
+      border-radius: 10px;
+    }
+    .admin-modal-input:focus { outline: none; border-color: var(--color-wine); }
+
+    .admin-modal-error {
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      background: #fbe4e4;
+      color: #a00;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+    .admin-modal-error.show { display: block; }
+
+    .admin-modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .admin-modal-login {
+      flex: 1;
+      padding: 13px;
+      background: var(--color-wine);
+      color: var(--color-cream);
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .admin-modal-login:hover { filter: brightness(1.1); }
+    .admin-modal-close {
+      padding: 13px 16px;
+      background: #eef1f6;
+      color: #5a6270;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* ===== Десктоп: чуть шире ===== */
+    @media (min-width: 600px) {
+      .site-header { padding: 22px 34px; }
+      .role-box { flex-direction: row; align-items: center; gap: 16px; width: auto; }
+      .map-section { padding: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <a href="{{ url_for('index') }}" class="brand-logo-link" aria-label="На главную">
+        <img class="brand-logo"
+             src="{{ url_for('static', filename='img/logo-cafe.jpg') }}"
+             alt="Логотип УрФУ Столовая">
+      </a>
+      <span class="brand-title">УрФУ Столовая</span>
+    </div>
+
+    <div class="role-box">
+      <span class="role-label"><span class="role-prefix">Вы:</span> <strong>{{ role_name }}</strong></span>
+      {% if role == 'admin' %}
+        <form method="post" action="{{ url_for('logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="btn-role">Выйти из режима работника</button>
+        </form>
+      {% else %}
+        <button type="button" class="btn-role" id="admin-login-btn">Войти как работник</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="map-section">
+    <h2 class="map-title">Столовые<br>Новокольцовского кампуса</h2>
+
+    <!-- Карта кампуса с метками загруженности -->
+    <div class="campus-map-wrap">
+      <img class="campus-map-img"
+           src="{{ url_for('static', filename='img/map-nvk.png') }}"
+           alt="Карта Новокольцовского кампуса">
+
+      {% for corpus in corpuses %}
+        {% set pin_file = corpus.pin_files[corpus.load] %}
+        <a class="map-pin"
+           style="left: {{ corpus.pin_x }}%; top: {{ corpus.pin_y }}%;"
+           href="{{ url_for('corpus', corpus_id=corpus.id) }}"
+           title="{{ corpus.name }}">
+          <img class="map-pin-img"
+               src="{{ url_for('static', filename='img/' ~ pin_file) }}"
+               alt="{{ corpus.name }}">
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- Легенда цветов -->
+    <ul class="load-legend">
+      <li><span class="legend-dot dot-low"></span> Свободно — можно спокойно поесть</li>
+      <li><span class="legend-dot dot-medium"></span> Средняя загруженность — возможна очередь</li>
+      <li><span class="legend-dot dot-high"></span> Высокая загруженность — большая очередь</li>
+    </ul>
+
+    <p class="map-hint">Чтобы отметить загруженность, выберите столовую</p>
+  </main>
+
+  {% if role != 'admin' %}
+    <div class="admin-modal" id="admin-modal" role="dialog" aria-hidden="true">
+      <p class="admin-modal-title">Вход для администратора</p>
+      <p class="admin-modal-sub">Введите пароль</p>
+      <input class="admin-modal-input" id="admin-modal-password" type="password"
+             placeholder="Пароль" autocomplete="current-password">
+      <p class="admin-modal-error" id="admin-modal-error">Неверный пароль. Попробуйте ещё раз.</p>
+      <div class="admin-modal-actions">
+        <button type="button" class="admin-modal-login" id="admin-modal-submit">Войти</button>
+        <button type="button" class="admin-modal-close" id="admin-modal-close">Закрыть</button>
+      </div>
+    </div>
+    <script defer src="{{ url_for('static', filename='js/main.js') }}"
+            data-page="index"
+            data-csrf="{{ csrf_token }}"></script>
+  {% endif %}
+</body>
+</html>
