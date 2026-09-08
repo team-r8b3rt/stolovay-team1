@@ -482,7 +482,7 @@
               html += '<div class="menu-item-guest-actions">';
               if (guestMissing) {
                 html += '<button type="button" class="menu-btn ghost guest-clear" data-act="clear-guest" data-id="' + esc(item.id) + '">Убрать пометку</button>';
-              } else {
+              } else if (item.visible) {
                 html += '<button type="button" class="menu-btn ghost guest-mark" data-act="mark-guest" data-id="' + esc(item.id) + '">Отметить как отсутствует</button>';
               }
               html += '</div>';
