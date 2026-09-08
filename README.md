@@ -74,36 +74,6 @@
 - Расположения столовых и меню — JSON-файлы в `backend/data/`
   (`locations.json`, `menu.json`).
 
-## Маршруты
-
-- `GET /` — главная страница (карта и метки).
-- `GET /corpus/<id>` — страница корпуса (или 404).
-- `GET /journal` — журнал событий (**только работник**).
-- `GET /api/loads` — загруженность всех корпусов для карты.
-- `GET /status/<id>` — текущий статус корпуса (JSON, кеш 60 с).
-- `POST /corpus/<id>/report-load` — голос `{"load": "low|medium|high"}`,
-  возвращает свежий статус.
-- `POST /corpus/<id>/canteen-location` — (только работник) изменить
-  расположение столовой.
-- `GET /corpus/<id>/menu` — меню корпуса (JSON). Гостям — только видимое,
-  работнику — всё.
-- `POST/PUT/PATCH/DELETE /corpus/<id>/menu/categories/...` и
-  `/menu/items/...` — (только работник) редактирование меню.
-- `POST /login`, `POST /logout` — вход/выход из режима работника.
-  Пароль работника: **2222** (хранится открытым текстом в `run.py`, чтобы
-  его было легко найти в коде).
-
-## Запуск
-
-```bash
-cd backend
-python -m venv venv
-venv\Scripts\activate        # Windows
-pip install -r requirements.txt
-python run.py
-```
-
-Откройте http://127.0.0.1:5000/ в браузере (мобильный вид — Ctrl+Shift+M).
 
 ## Структура проекта
 
@@ -116,9 +86,3 @@ backend/
   templates/          — HTML-страницы (index.html, corpus.html, journal.html)
   static/             — картинки и скрипты (CSS внутри шаблонов)
 ```
-
-## Что можно заменить на реальное позже
-
-- Названия, адреса и этажи столовых — список `_CORPS` в `backend/run.py`.
-- Реальные блюда и цены — `backend/data/menu.json` (сейчас примерные).
-- Изображения — `backend/static/img/` (логотип, карта, пины, плашки, меню).
