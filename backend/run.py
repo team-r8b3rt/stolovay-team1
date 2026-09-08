@@ -635,7 +635,7 @@ INDEX_HTML = """<!DOCTYPE html>
       {% if role == 'admin' %}
         <form method="post" action="{{ url_for('logout') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button type="submit" class="btn-role">Выйти из админки</button>
+          <button type="submit" class="btn-role">Выйти из режима работника</button>
         </form>
       {% else %}
         <button type="button" class="btn-role" id="admin-login-btn">Войти как работник</button>
@@ -863,7 +863,7 @@ CORPUS_HTML = """<!DOCTYPE html>
     .card-img {
       display: none;
       width: 100%;
-      height: 168px;
+      height: 210px;
       object-fit: cover;
       object-position: center;
       border-radius: var(--radius);
@@ -877,7 +877,7 @@ CORPUS_HTML = """<!DOCTYPE html>
       to   { opacity: 1; transform: scale(1); }
     }
 
-    /* Кнопка меню находится в самом низу, под надписью «УрФУ Столовая». */
+    /* Кнопка меню находится над надписью «УрФУ Столовая». */
     .menu-button-wrap {
       width: 100%;
       margin: 12px auto 0;
@@ -887,7 +887,7 @@ CORPUS_HTML = """<!DOCTYPE html>
 
     .menu-open-btn {
       display: block;
-      width: min(540px, 100%);
+      width: min(620px, 100%);
       padding: 0;
       border: none;
       outline: none;
@@ -1473,13 +1473,14 @@ CORPUS_HTML = """<!DOCTYPE html>
 
   <footer>
     <div class="report-feedback" id="report-feedback">Спасибо, обновили!</div>
-    <span class="footer-text" id="footer-text">УрФУ Столовая</span>
 
     <div class="menu-button-wrap">
       <button type="button" class="menu-open-btn" id="menu-open-btn" aria-label="Открыть меню" aria-haspopup="dialog">
         <img class="menu-image" src="{{ url_for('static', filename='img/menu.png') }}" alt="Меню столовой">
       </button>
     </div>
+
+    <span class="footer-text" id="footer-text">УрФУ Столовая</span>
   </footer>
 
   <!-- Модальное окно меню (Этап 3) -->
