@@ -863,7 +863,7 @@ CORPUS_HTML = """<!DOCTYPE html>
     .card-img {
       display: none;
       width: 100%;
-      height: 260px;
+      height: 190px;
       object-fit: cover;
       object-position: center;
       border-radius: var(--radius);
@@ -880,7 +880,7 @@ CORPUS_HTML = """<!DOCTYPE html>
     /* Кнопка меню находится над надписью «УрФУ Столовая». */
     .menu-button-wrap {
       width: 100%;
-      margin: 12px auto 0;
+      margin: -18px auto 0;
       display: flex;
       justify-content: center;
     }
@@ -1122,7 +1122,7 @@ CORPUS_HTML = """<!DOCTYPE html>
       background: none;
       position: relative;
       width: 100%;
-      height: 86px;
+      height: auto;
       transition: transform 0.18s cubic-bezier(.2,.8,.2,1), box-shadow 0.18s ease;
       -webkit-tap-highlight-color: transparent;
     }
@@ -1131,7 +1131,7 @@ CORPUS_HTML = """<!DOCTYPE html>
     .report-btn.is-pressed { transform: scale(1.06); }
     .report-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
     .report-btn:disabled { opacity: 0.7; cursor: default; }
-    .rbtn-img { display: block; width: 100%; height: 100%; object-fit: fill; }
+    .rbtn-img { display: block; width: 100%; height: auto; }
 
     .hover-dot {
       position: absolute;
@@ -1144,15 +1144,16 @@ CORPUS_HTML = """<!DOCTYPE html>
       transition: opacity 0.2s ease;
       pointer-events: none;
     }
-    /* Белый кружок появляется и мягко пульсирует только на выбранной кнопке. */
-    .report-btn.selected .hover-dot {
-      opacity: 1;
-      animation: dotAppearDisappear 1.4s ease-in-out infinite;
+    /* Белый кружок виден только на выбранной кнопке и мигает при нажатии. */
+    .report-btn.selected .hover-dot { opacity: 1; }
+    .report-btn.dot-flash .hover-dot {
+      animation: dotFlash 0.55s ease;
     }
 
-    @keyframes dotAppearDisappear {
-      0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.55); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    @keyframes dotFlash {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.12); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
     }
     .report-btn.low .hover-dot    { left: 5.7%; top: 52%; background: #eef1f6; }
     .report-btn.medium .hover-dot { left: 6.4%; top: 53%; background: #eef1f6; }
@@ -1294,7 +1295,7 @@ CORPUS_HTML = """<!DOCTYPE html>
       }
 
       .card-img {
-        height: 230px;
+        height: 170px;
         min-height: 0;
       }
 
@@ -1321,11 +1322,11 @@ CORPUS_HTML = """<!DOCTYPE html>
         line-height: 1.2;
       }
 
-      .report-btn { height: 76px; }
+      .report-btn { height: auto; }
       .report-btn:hover { transform: scale(1.025); }
       .report-btn:active,
       .report-btn.is-pressed { transform: scale(1.06); }
-      .menu-button-wrap { margin-top: 10px; }
+      .menu-button-wrap { margin-top: -14px; }
       .menu-open-btn:hover { transform: scale(1.025); }
       .menu-open-btn:active,
       .menu-open-btn.is-pressed { transform: scale(1.08); }

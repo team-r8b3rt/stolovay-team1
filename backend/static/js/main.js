@@ -151,6 +151,12 @@
     });
   }
 
+  function flashDot(btn) {
+    btn.classList.remove("dot-flash");
+    void btn.offsetWidth;
+    btn.classList.add("dot-flash");
+  }
+
   var matchLoad = (loadCard.className || "").match(/load-(low|medium|high)/);
   if (matchLoad) setSelected(matchLoad[1]);
 
@@ -170,6 +176,10 @@
   Array.prototype.forEach.call(buttons, function (btn) {
     btn.addEventListener("click", function () {
       var load = btn.getAttribute("data-load");
+
+      // сразу показываем выбранную кнопку
+      setSelected(load);
+      flashDot(btn);
 
       // на время запроса блокируем кнопки, чтобы не слать повторно
       Array.prototype.forEach.call(buttons, function (b) { b.disabled = true; });
