@@ -17,7 +17,6 @@ import threading
 import time
 
 from flask import Flask, jsonify, redirect, render_template_string, request, session, url_for
-from werkzeug.security import check_password_hash
 
 # ===== Данные о корпусах ================================================
 # Статика (имена, расположение, позиции меток) — здесь.
@@ -171,13 +170,8 @@ LOAD_DESCRIPTIONS = {
     "high": ("Высокая загруженность", "Большая очередь, лучше прийти позже."),
 }
 
-# Пароль администратора хранится в виде hash (не открытым текстом).
-# Сам пароль не лежит в коде — проверка идёт через check_password_hash.
-_ADMIN_PASSWORD_HASH = (
-    "scrypt:32768:8:1$uZNopTcflQI19Gor$8073e52ac6c92ce10f64adc015d7f479835fb145"
-    "6ae80ce7a5f00849854a5798d5940b63a74ad995580fd973d8011e8bfe04ccbf6aecd2c3c"
-    "2453124d4862243"
-)
+# Пароль администратора (открытым текстом)
+_ADMIN_PASSWORD = "2222"
 
 # ===== CSRF-защита ======================================================
 # Для каждой сессии генерируется токен; все мутирующие запросы (POST/PUT/
@@ -644,7 +638,7 @@ INDEX_HTML = """<!DOCTYPE html>
           <button type="submit" class="btn-role">Выйти из админки</button>
         </form>
       {% else %}
-        <button type="button" class="btn-role" id="admin-login-btn">Войти как администратор</button>
+        <button type="button" class="btn-role" id="admin-login-btn">Войти как работник</button>
       {% endif %}
     </div>
   </header>
@@ -1565,7 +1559,7 @@ def csrf_guard():
 def role_info():
     """Возвращает (role, role_name) — текущую роль и её название."""
     role = session.get("role", "guest")
-    return role, "Гость" if role == "guest" else "Админ"
+    return role, "Гость" if role == "guest" else "Работник"
 
 
 @app.route("/")
@@ -1828,7 +1822,7 @@ def login():
     # Отдельной страницы входа нет — плашка на главной шлёт сюда JSON.
     payload = request.get_json(silent=True) or request.form
     password = (payload.get("password") or "").strip()
-    if check_password_hash(_ADMIN_PASSWORD_HASH, password):
+    if password == _ADMIN_PASSWORD:
         session["role"] = "admin"
         return jsonify({"ok": True})
     return jsonify({"error": "Неверный пароль"}), 401
