@@ -771,7 +771,7 @@
         {%- if corpus.status_nodata %}
           Пока мало оценок — статус по умолчанию.
         {%- else %}
-          Оценок за 30 мин: {{ corpus.votes }} · доверие {{ '%.0f' % (corpus.confidence * 100) }}%
+          Проголосовало за 10 мин: {{ corpus.voters }} чел. · доверие {{ '%.0f' % (corpus.confidence * 100) }}%
         {%- endif %}
       </p>
     </div>

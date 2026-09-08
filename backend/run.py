@@ -177,6 +177,7 @@ def corpus_dict(entry):
         "pin_files": _make_pins(code),
         "confidence": stat["confidence"],
         "votes": stat["total_votes"],
+        "voters": stat["voters"],
         "status_nodata": nodata,
     }
 
@@ -350,6 +351,7 @@ def api_loads():
             "load": default_load if nodata else stat["status"],
             "confidence": stat["confidence"],
             "votes": stat["total_votes"],
+            "voters": stat["voters"],
             "nodata": nodata,
         }
     return jsonify(result)
@@ -366,7 +368,7 @@ def report_load(corpus_id):
     if new_load not in ("low", "medium", "high"):
         return jsonify({"error": "Недопустимое значение load"}), 400
 
-    # Кладём голос в базу; cast_vote сам проверит «не чаще раза в 5 минут».
+    # Кладём голос в базу; cast_vote сам проверит «не чаще раза в минуту».
     result, code = cast_vote(corpus_id, new_load)
     if code != 200:
         return jsonify(result), code

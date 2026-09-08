@@ -107,6 +107,11 @@
             var info = loads[code];
             var img = pin.querySelector(".map-pin-img");
             if (!img || !info) return;
+            // Свежий счётчик проголосовавших на метке.
+            var badge = pin.querySelector(".map-pin-badge");
+            if (badge) {
+              badge.textContent = info.voters || 0;
+            }
             // Мало голосов (NO_DATA) — метка серая.
             pin.classList.toggle("pin-nodata", !!info.nodata);
             var nextLoad = info.load;
@@ -168,14 +173,14 @@
     btn.classList.add("dot-flash");
   }
 
-  // Строка с числом голосов и доверием под плашкой статуса.
+  // Строка с числом проголосовавших и доверием под плашкой статуса.
   function renderStats(info) {
     if (!loadStats || !info) return;
     if (info.nodata || info.status === "NO_DATA") {
       loadStats.textContent = "Пока мало оценок — статус по умолчанию.";
     } else {
-      loadStats.textContent = "Оценок за 30 мин: " + info.votes +
-        " · доверие " + Math.round((info.confidence || 0) * 100) + "%";
+      loadStats.textContent = "Проголосовало за 10 мин: " + (info.voters || 0) +
+        " чел. · доверие " + Math.round((info.confidence || 0) * 100) + "%";
     }
   }
 
@@ -210,11 +215,11 @@
     }
   }
 
-  // После успешного голоса кнопки блокируются на 5 минут (столько же
+  // После успешного голоса кнопки блокируются на 1 минуту (столько же
   // запрещает повторный голос сервер), а вместо статов — обратный отсчёт.
   function lockButtons() {
-    var left = 300;
-    if (loadStats) loadStats.textContent = "Вы голосовали. Следующий голос через 5:00";
+    var left = 60;
+    if (loadStats) loadStats.textContent = "Вы голосовали. Следующий голос через 1:00";
     clearInterval(_unlockTimer);
     _unlockTimer = window.setInterval(function () {
       left -= 1;

@@ -197,6 +197,27 @@
       object-fit: cover;
     }
 
+    /* Счётчик «сколько человек проголосовало» на метке столовой. */
+    .map-pin-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      min-width: 30px;
+      height: 30px;
+      padding: 0 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-wine);
+      color: var(--color-cream);
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1;
+      box-sizing: border-box;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+    }
+
     /* ===== Легенда цветов ===== */
     .load-legend {
       list-style: none;
@@ -475,6 +496,7 @@
           <img class="map-pin-img"
                src="{{ url_for('static', filename='img/' ~ pin_file) }}"
                alt="{{ corpus.name }}">
+          <span class="map-pin-badge" data-code="{{ corpus.id }}">{{ corpus.voters }}</span>
         </a>
       {% endfor %}
     </div>

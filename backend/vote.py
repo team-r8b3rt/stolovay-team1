@@ -6,9 +6,9 @@
   - Каждый гость голосует за столовую: low / medium / high.
   - Голоса хранятся в базе SQLite (файл votes.db в папке data/).
   - Итоговый статус считает compute_status(): берутся голоса за последние
-    30 минут, каждому присваивается вес (свежий голос — 3, старый — 1),
+    10 минут, каждому присваивается вес (свежий голос — 3, старый — 1),
     считается взвешенное среднее и переводится в уровень по порогам.
-  - Один посетитель может голосовать за одну столовую не чаще раза в 5 минут.
+  - Один посетитель может голосовать за одну столовую не чаще раза в минуту.
 
 Как подключить в run.py (всего две строки):
     from vote import vote_bp
@@ -27,13 +27,14 @@ from flask import Blueprint, jsonify, request, session
 # Номера уровней: low=1, medium=2, high=3 (нужны для взвешенного среднего).
 LEVEL_SCORE = {"low": 1, "medium": 2, "high": 3}
 
-# Голос «живёт» 30 минут — более старые в расчёт не берутся.
-WINDOW_SECONDS = 30 * 60
+# Голос «живёт» 10 минут — более старые в расчёт не берутся.
+WINDOW_SECONDS = 10 * 60
 
-# Голосовать за одну столовую можно не чаще, чем раз в 5 минут.
-VOTE_GAP_SECONDS = 5 * 60
+# Голосовать за одну столовую можно не чаще, чем раз в минуту.
+VOTE_GAP_SECONDS = 1 * 60
 
-# Вес голоса по возрасту: до 5 минут — свежий (вес больше), иначе старый.
+# Вес голоса по возрасту: до 3 минут — свежий (вес больше), иначе старый.
+FRESH_SECONDS = 3 * 60
 FRESH_WEIGHT = 3
 OLD_WEIGHT = 1
 
@@ -78,7 +79,7 @@ def init_db():
                 timestamp REAL NOT NULL
             )
         """)
-        # Индекс ускоряет выборку «последние 30 минут для конкретной столовой».
+        # Индекс ускоряет выборку «последние 10 минут для конкретной столовой».
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_votes_cafeteria "
             "ON votes (cafeteria_id, timestamp)"
@@ -109,11 +110,11 @@ def _cleanup_old(conn, now):
 
 
 def _recent_votes(cafeteria_id, now):
-    """Голоса за последние 30 минут для этой столовой (свежие сверху)."""
+    """Голоса за последние 10 минут для этой столовой (свежие сверху)."""
     conn = _connect()
     try:
         rows = conn.execute(
-            "SELECT status, timestamp FROM votes "
+            "SELECT status, timestamp, session_id FROM votes "
             "WHERE cafeteria_id = ? AND timestamp >= ? "
             "ORDER BY timestamp DESC",
             (cafeteria_id, now - WINDOW_SECONDS),
@@ -141,7 +142,7 @@ def compute_status(cafeteria_id, now=None):
     """
     Считает текущий статус столовой из всех голосов.
 
-    Возвращает словарь: {status, confidence, total_votes}.
+    Возвращает словарь: {status, confidence, total_votes, voters}.
     Параметр now можно передать при тестах, чтобы подделать время.
     """
     if now is None:
@@ -149,10 +150,16 @@ def compute_status(cafeteria_id, now=None):
 
     votes = _recent_votes(cafeteria_id, now)
     total = len(votes)
+    voters = len({row["session_id"] for row in votes})
 
     # Меньше 2 голосов — слишком мало мнений, отдаём «нет данных».
     if total < MIN_VOTES:
-        return {"status": "NO_DATA", "confidence": 0.0, "total_votes": total}
+        return {
+            "status": "NO_DATA",
+            "confidence": 0.0,
+            "total_votes": total,
+            "voters": voters,
+        }
 
     score_sum = 0.0      # Σ(вес × число уровня)
     weight_sum = 0.0     # Σ весов
@@ -160,7 +167,7 @@ def compute_status(cafeteria_id, now=None):
 
     for row in votes:
         age = now - row["timestamp"]
-        weight = FRESH_WEIGHT if age <= VOTE_GAP_SECONDS else OLD_WEIGHT
+        weight = FRESH_WEIGHT if age <= FRESH_SECONDS else OLD_WEIGHT
         score = LEVEL_SCORE[row["status"]]
         score_sum += weight * score
         weight_sum += weight
@@ -187,6 +194,7 @@ def compute_status(cafeteria_id, now=None):
         "status": status,
         "confidence": confidence,
         "total_votes": total,
+        "voters": voters,
     }
 
 
@@ -195,13 +203,13 @@ def cast_vote(cafeteria_id, status, now=None):
     Сохраняет голос и сразу возвращает свежий статус.
 
     Возвращает пару (json-словарь, http-код).
-    Если этот посетитель уже голосовал за эту столовую последние 5 минут —
+    Если этот посетитель уже голосовал за эту столовую последнюю минуту —
     вернёт (ошибка) 429 и ничего не сохранит.
     """
     now = now if now is not None else time.time()
     voter_id = _uid()
 
-    # Проверка «не чаще раза в 5 минут».
+    # Проверка «не чаще раза в минуту».
     conn = _connect()
     try:
         row = conn.execute(
@@ -215,7 +223,7 @@ def cast_vote(cafeteria_id, status, now=None):
 
     if row is not None and now - row["timestamp"] < VOTE_GAP_SECONDS:
         return (
-            {"error": "Вы уже голосовали за эту столовую. Подождите 5 минут."},
+            {"error": "Вы уже голосовали за эту столовую. Подождите минуту."},
             429,
         )
 
