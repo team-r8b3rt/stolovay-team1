@@ -447,7 +447,7 @@
             html += '<div class="menu-item-top">';
             html += '<span class="menu-item-name">' + esc(item.name);
             if (!item.visible) { html += '<span class="menu-item-hidden-tag">нет в наличии</span>'; }
-            if (guestMissing) { html += '<span class="menu-item-guest-tag">отметили гости</span>'; }
+            if (guestMissing) { html += '<span class="menu-item-guest-tag">гости отметили отсутствующее</span>'; }
             html += '</span>';
             html += '<span class="menu-item-price">' + esc(item.price) + ' ₽</span>';
             html += '</div>';

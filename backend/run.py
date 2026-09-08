@@ -180,13 +180,16 @@ def _save_menu_normalized():
 
 
 # ===== Гостевые пометки «блюдо отсутствует» =============================
-# Гости могут отмечать блюда как отсутствующие (например, когда админ не
-# успел обновить меню). Такая пометка живёт сутки, выглядит иначе, чем
-# «Нет в наличии» от работника, и её может отменить любой гость или
-# работник. Храним их отдельно от menu.json, чтобы не портить меню.
+# Гости могут отмечать блюда как отсутствующие (например, когда работник не
+# успел обновить меню). Такая пометка выглядит иначе, чем «Нет в наличии»
+# от работника, и её может отменить любой гость или работник. Храним их
+# отдельно от menu.json, чтобы не портить меню. Все пометки сбрасываются
+# раз в сутки ровно в 00:00 по Екатеринбургу (UTC+5).
 
 _GUEST_REPORTS_FILE = os.path.join(_DATA_DIR, "guest_reports.json")
-_GUEST_REPORT_TTL = 24 * 60 * 60  # сутки
+
+# Екатеринбург — UTC+5, без перехода на летнее время.
+_YEK_OFFSET_SECONDS = 5 * 3600
 
 
 def _load_guest_reports():
@@ -201,7 +204,6 @@ def _load_guest_reports():
 
 
 _GUEST_REPORTS = _load_guest_reports()
-_last_guest_purge = time.time()
 
 # Словарь для быстрого поиска корпуса по коду (вместо линейного поиска по списку).
 _CORPS_BY_ID = {entry[1]: entry for entry in _CORPS}
@@ -212,21 +214,26 @@ def _save_guest_reports():
     _save_json(_GUEST_REPORTS_FILE, _GUEST_REPORTS)
 
 
-def _purge_expired_guest_reports(now=None):
-    """Удаляет пометки гостей старше суток и сохраняет изменения.
+def _today_start_yek(now):
+    """Epoch-время 00:00 по Екатеринбургу для дня, содержащего now."""
+    local = now + _YEK_OFFSET_SECONDS
+    midnight_local = local - (local % 86400)
+    return midnight_local - _YEK_OFFSET_SECONDS
 
-    Вызывается не при каждом запросе, а не чаще раза в 60 секунд,
-    чтобы не тратить время на чтение/запись JSON.
+
+def _purge_expired_guest_reports(now=None):
+    """Удаляет пометки гостей прошлых суток и сохраняет изменения.
+
+    Пометка сбрасывается ровно в 00:00 по Екатеринбургу: всё, что отмечено
+    вчера и раньше, исчезает. Сохраняет файл только если что-то удалилось.
+    Вызывается на каждом запросе меню, но файл не трогает без нужды.
     """
-    global _last_guest_purge
     now = now if now is not None else time.time()
-    if now - _last_guest_purge < 60:
-        return
-    _last_guest_purge = now
+    cutoff = _today_start_yek(now)
     changed = False
     for code, reports in _GUEST_REPORTS.items():
         fresh = {item_id: ts for item_id, ts in reports.items()
-                 if now - ts < _GUEST_REPORT_TTL}
+                 if ts >= cutoff}
         if len(fresh) != len(reports):
             _GUEST_REPORTS[code] = fresh
             changed = True
@@ -512,8 +519,8 @@ def menu(corpus_id):
 def toggle_guest_missing(corpus_id, item_id):
     """Отметить/снять пометку «блюдо отсутствует» (доступно гостям).
 
-    Пометка гостя живёт сутки; её может отменить любой гость, а работник —
-    кнопкой «Сбросить пометку гостей» в админ-режиме.
+    Пометка сбрасывается в 00:00 по Екатеринбургу; её может отменить любой
+    гость, а работник — кнопкой «Сбросить пометку гостей» в админ-режиме.
     """
     if corpus_by_id(corpus_id) is None:
         return jsonify({"error": "Корпус не найден"}), 404
