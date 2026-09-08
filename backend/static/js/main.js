@@ -135,7 +135,7 @@
     }
     if (pins.length) {
       refreshMapLoads();
-      window.setInterval(refreshMapLoads, 4000);
+      window.setInterval(refreshMapLoads, 2000);
     }
     return;
   }
@@ -297,9 +297,9 @@
     });
   });
 
-  // Сразу проверяем статус и дальше обновляем каждые 3 секунды.
+  // Сразу проверяем статус и дальше обновляем каждые 2 секунды.
   refreshStatus();
-  window.setInterval(refreshStatus, 3000);
+  window.setInterval(refreshStatus, 2000);
 
   // Редактирование расположения (только в админ-режиме)
   var locEditBtn = document.getElementById("loc-edit-btn");
@@ -440,10 +440,14 @@
         html += '</div>';
         if (cat.items && cat.items.length) {
           cat.items.forEach(function (item) {
-            html += '<div class="menu-item' + (item.visible ? '' : ' unavailable') + '">';
+            var guestMissing = !!item.guest_missing;
+            html += '<div class="menu-item' + (item.visible ? '' : ' unavailable');
+            if (guestMissing) html += ' guest-missing';
+            html += '">';
             html += '<div class="menu-item-top">';
             html += '<span class="menu-item-name">' + esc(item.name);
             if (!item.visible) { html += '<span class="menu-item-hidden-tag">нет в наличии</span>'; }
+            if (guestMissing) { html += '<span class="menu-item-guest-tag">отметили гости</span>'; }
             html += '</span>';
             html += '<span class="menu-item-price">' + esc(item.price) + ' ₽</span>';
             html += '</div>';
@@ -454,7 +458,18 @@
               html += '<div class="menu-item-admin">';
               html += '<button type="button" class="menu-btn ghost" data-act="edit-item" data-cat="' + esc(cat.id) + '" data-id="' + esc(item.id) + '">Изменить</button>';
               html += '<button type="button" class="menu-btn ghost" data-act="toggle-item" data-cat="' + esc(cat.id) + '" data-id="' + esc(item.id) + '">' + (item.visible ? 'Нет в наличии' : 'В наличии') + '</button>';
+              if (guestMissing) {
+                html += '<button type="button" class="menu-btn ghost guest-clear" data-act="clear-guest" data-cat="' + esc(cat.id) + '" data-id="' + esc(item.id) + '">Сбросить пометку гостей</button>';
+              }
               html += '<button type="button" class="menu-btn danger" data-act="del-item" data-cat="' + esc(cat.id) + '" data-id="' + esc(item.id) + '">Удалить</button>';
+              html += '</div>';
+            } else {
+              html += '<div class="menu-item-guest-actions">';
+              if (guestMissing) {
+                html += '<button type="button" class="menu-btn ghost guest-clear" data-act="clear-guest" data-id="' + esc(item.id) + '">Убрать пометку</button>';
+              } else {
+                html += '<button type="button" class="menu-btn ghost guest-mark" data-act="mark-guest" data-id="' + esc(item.id) + '">Отметить как отсутствует</button>';
+              }
               html += '</div>';
             }
             html += '</div>';
@@ -652,6 +667,8 @@
       } else if (act === "toggle-item") {
         var item = findItemById(catId, id);
         apiPatch("/corpus/" + corpusId + "/menu/items/" + id, { visible: !item.visible });
+      } else if (act === "mark-guest" || act === "clear-guest") {
+        apiGuestMark(id, act === "mark-guest");
       }
     });
   }
@@ -694,6 +711,21 @@
         fetchMenu();
       })
       .catch(function () { window.alert("Не получилось изменить."); });
+  }
+
+  // Гостевая пометка «блюдо отсутствует»: mark=true поставить, false — снять.
+  function apiGuestMark(itemId, mark) {
+    fetch("/corpus/" + corpusId + "/menu/items/" + itemId + "/guest-missing", {
+      method: "POST",
+      headers: csrfHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ mark: mark }),
+    })
+      .then(function (resp) { return resp.json(); })
+      .then(function (data) {
+        if (data.error) { throw new Error(data.error); }
+        fetchMenu();
+      })
+      .catch(function () { window.alert("Не получилось обновить пометку."); });
   }
 
   if (menuAddItemBtn) {
