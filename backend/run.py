@@ -319,7 +319,7 @@ def csrf_guard():
 def role_info():
     """Возвращает (role, role_name): текущую роль и её название для шапки."""
     role = session.get("role", "guest")
-    return role, "Гость" if role == "guest" else "Работник"
+    return role, "Гость" if role == "guest" else "Администратор"
 
 
 def _visible_menu(corpus_id, visible_only):
