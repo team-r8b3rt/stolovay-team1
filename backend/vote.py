@@ -37,8 +37,9 @@ VOTE_GAP_SECONDS = 5 * 60
 FRESH_WEIGHT = 3
 OLD_WEIGHT = 1
 
-# Меньше 5 голосов — данных мало, показываем NO_DATA.
-MIN_VOTES = 5
+# Меньше 2 голосов — данных мало, показываем NO_DATA (статус появляется
+# уже при двух голосах, чтобы маркеры на карте не держались серыми).
+MIN_VOTES = 2
 
 # Кеш для GET /status: храним посчитанный статус не дольше минуты.
 CACHE_SECONDS = 60
@@ -122,6 +123,20 @@ def _recent_votes(cafeteria_id, now):
         conn.close()
 
 
+def list_recent_votes(limit=50):
+    """Свежие голоса для журнала событий: от новых к старым, не больше limit."""
+    conn = _connect()
+    try:
+        rows = conn.execute(
+            "SELECT id, cafeteria_id, status, session_id, timestamp "
+            "FROM votes ORDER BY timestamp DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return rows
+    finally:
+        conn.close()
+
+
 def compute_status(cafeteria_id, now=None):
     """
     Считает текущий статус столовой из всех голосов.
@@ -135,7 +150,7 @@ def compute_status(cafeteria_id, now=None):
     votes = _recent_votes(cafeteria_id, now)
     total = len(votes)
 
-    # Меньше 5 голосов — доверия мало, отдаём «нет данных».
+    # Меньше 2 голосов — слишком мало мнений, отдаём «нет данных».
     if total < MIN_VOTES:
         return {"status": "NO_DATA", "confidence": 0.0, "total_votes": total}
 

@@ -734,6 +734,9 @@
     </div>
     <div class="role-box">
       <span class="role-label"><strong>{{ 'Административный режим' if role == 'admin' else 'Гостевой режим' }}</strong></span>
+      {% if role == 'admin' %}
+        <a class="btn-back" href="{{ url_for('journal') }}">Журнал событий</a>
+      {% endif %}
       <a class="btn-back" href="{{ url_for('index') }}">← Назад на главную</a>
     </div>
   </header>

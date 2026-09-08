@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="{{ url_for('static', filename='img/favicon.png') }}" type="image/png">
+  <title>Журнал событий — УрФУ Столовая</title>
+  <style>
+    :root {
+      --color-primary: #0f1c4d;
+      --color-accent: #e5b800;
+      --color-bg: #e6e6e6;
+      --color-text: #1a1a1a;
+      --color-cream: #fbf7ee;
+      --color-wine: #7c0921;
+      --radius: 16px;
+      --shadow: 0 4px 14px rgba(15, 28, 77, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+    }
+
+    .site-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 22px;
+      background: var(--color-primary);
+      color: #ffffff;
+    }
+
+    .brand-title { font-size: 30px; font-weight: 800; color: var(--color-cream); }
+
+    .role-box { display: flex; align-items: center; gap: 16px; }
+    .role-label { font-size: 20px; color: #d9ddee; margin-right: 14px; }
+
+    .btn-back {
+      background: var(--color-cream);
+      color: var(--color-wine);
+      border: 2px solid var(--color-wine);
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 800;
+      padding: 12px 20px;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 4px 10px rgba(124, 9, 33, 0.28);
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .btn-back:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(124, 9, 33, 0.35);
+    }
+
+    main { max-width: 760px; margin: 0 auto; padding: 22px; }
+
+    .journal-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #10245c;
+      text-align: center;
+      margin: 6px 0 4px;
+    }
+    .journal-sub {
+      text-align: center;
+      color: #5a6580;
+      font-size: 15px;
+      margin: 0 0 18px;
+    }
+
+    .journal-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .journal-table th, .journal-table td {
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 15px;
+      border-bottom: 1px solid #e6e6e6;
+    }
+    .journal-table th {
+      background: var(--color-primary);
+      color: var(--color-cream);
+      font-size: 14px;
+      letter-spacing: 0.3px;
+    }
+    .journal-table td { vertical-align: top; }
+    .journal-table tr:last-child td { border-bottom: none; }
+
+    .status-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    .dot-low { background: #2e9e4f; }
+    .dot-medium { background: #ffbf00; }
+    .dot-high { background: #d63333; }
+
+    .journal-empty {
+      text-align: center;
+      color: #7a8090;
+      font-size: 16px;
+      padding: 40px 10px;
+      background: #ffffff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    @media (max-width: 599px) {
+      .site-header { padding: 12px 14px 14px; gap: 10px; }
+      .brand-title { font-size: 21px; }
+      .role-box { width: 100%; flex-direction: column; align-items: stretch; gap: 8px; }
+      .role-label { margin-right: 0; font-size: 16px; text-align: center; }
+      .btn-back { width: 100%; padding: 10px 14px; font-size: 16px; }
+      main { padding: 14px 10px 18px; }
+      .journal-table th, .journal-table td { padding: 9px 8px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <span class="brand-title">Журнал событий</span>
+    <div class="role-box">
+      <span class="role-label">{{ role_name }}</span>
+      <a class="btn-back" href="{{ url_for('index') }}">← На главную</a>
+    </div>
+  </header>
+
+  <main>
+    <h1 class="journal-title">События загруженности</h1>
+    <p class="journal-sub">Последние голоса: время · столовая · уровень (журнал хранит события примерно за час)</p>
+
+    {% if events %}
+      <table class="journal-table">
+        <thead>
+          <tr>
+            <th>Время</th>
+            <th>Столовая</th>
+            <th>Уровень</th>
+            <th>Посетитель</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in events %}
+            <tr>
+              <td>{{ event.time }}</td>
+              <td>{{ event.cafeteria }}</td>
+              <td><span class="status-dot {{ 'dot-' ~ event.status_key if event.status_key }}"></span>{{ event.status }}</td>
+              <td>{{ event.session }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="journal-empty">Пока нет событий. Оцените загруженность на странице столовой.</p>
+    {% endif %}
+  </main>
+</body>
+</html>
