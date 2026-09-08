@@ -15,12 +15,13 @@ import json
 import os
 import secrets
 import threading
+import time
 from datetime import datetime
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 
 # Модуль голосования (голоса в SQLite, расчёт статуса) — см. vote.py.
-from vote import cast_vote, compute_status, list_recent_votes, vote_bp
+from vote import cast_vote, cached_status, list_recent_votes, vote_bp
 
 # ===== Папки проекта =====================================================
 # Все папки задаём явно (относительно этого файла), чтобы сервер работал
@@ -28,19 +29,44 @@ from vote import cast_vote, compute_status, list_recent_votes, vote_bp
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 _DATA_DIR = os.path.join(_BASE_DIR, "data")
 
+# Секретный ключ нужен для сессий (кто сейчас «работник», CSRF-токен и т.д.).
+# Берётся из переменной окружения SECRET_KEY, а если её нет — из локального
+# файла .secret_key (создаётся один раз и не попадает в git, см. .gitignore).
+# Так ключ не «светится» в коде и остаётся стабильным между перезапусками.
+_SECRET_FILE = os.path.join(_DATA_DIR, ".secret_key")
+
+
+def _load_secret_key():
+    from_env = os.environ.get("SECRET_KEY")
+    if from_env:
+        return from_env
+    try:
+        with open(_SECRET_FILE, "r", encoding="utf-8") as f:
+            key = f.read().strip()
+        if key:
+            return key
+    except (OSError, ValueError):
+        pass
+    key = secrets.token_hex(32)
+    try:
+        os.makedirs(_DATA_DIR, exist_ok=True)
+        with open(_SECRET_FILE, "w", encoding="utf-8") as f:
+            f.write(key)
+    except OSError:
+        pass
+    return key
+
+
 app = Flask(
     __name__,
     template_folder=os.path.join(_BASE_DIR, "templates"),
     static_folder=os.path.join(_BASE_DIR, "static"),
 )
 
-app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(16)
+app.secret_key = _load_secret_key()
 
 # Регистрируем маршруты голосования (/vote и /status/<id>) из vote.py.
 app.register_blueprint(vote_bp)
-
-# Секретный ключ нужен для сессий (кто сейчас «работник», CSRF-токен и т.д.).
-# В реальном проекте задаётся через переменную окружения SECRET_KEY.
 
 # ===== Данные о корпусах ================================================
 # Статика (имена, расположение, позиции меток) — здесь (список _CORPS ниже).
@@ -153,18 +179,76 @@ def _save_menu_normalized():
     _save_menu(_CURRENT_MENU)
 
 
+# ===== Гостевые пометки «блюдо отсутствует» =============================
+# Гости могут отмечать блюда как отсутствующие (например, когда админ не
+# успел обновить меню). Такая пометка живёт сутки, выглядит иначе, чем
+# «Нет в наличии» от работника, и её может отменить любой гость или
+# работник. Храним их отдельно от menu.json, чтобы не портить меню.
+
+_GUEST_REPORTS_FILE = os.path.join(_DATA_DIR, "guest_reports.json")
+_GUEST_REPORT_TTL = 24 * 60 * 60  # сутки
+
+
+def _load_guest_reports():
+    """Читает пометки гостей: {код корпуса: {id блюда: время(timestamp)}}."""
+    defaults = {code: {} for name, code, loc, load, x, y in _CORPS}
+    try:
+        with open(_GUEST_REPORTS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return {code: data.get(code, {}) for code, _ in defaults.items()}
+    except (OSError, ValueError):
+        return defaults
+
+
+_GUEST_REPORTS = _load_guest_reports()
+_last_guest_purge = time.time()
+
+# Словарь для быстрого поиска корпуса по коду (вместо линейного поиска по списку).
+_CORPS_BY_ID = {entry[1]: entry for entry in _CORPS}
+
+
+def _save_guest_reports():
+    """Сохраняет пометки гостей в JSON-файл."""
+    _save_json(_GUEST_REPORTS_FILE, _GUEST_REPORTS)
+
+
+def _purge_expired_guest_reports(now=None):
+    """Удаляет пометки гостей старше суток и сохраняет изменения.
+
+    Вызывается не при каждом запросе, а не чаще раза в 60 секунд,
+    чтобы не тратить время на чтение/запись JSON.
+    """
+    global _last_guest_purge
+    now = now if now is not None else time.time()
+    if now - _last_guest_purge < 60:
+        return
+    _last_guest_purge = now
+    changed = False
+    for code, reports in _GUEST_REPORTS.items():
+        fresh = {item_id: ts for item_id, ts in reports.items()
+                 if now - ts < _GUEST_REPORT_TTL}
+        if len(fresh) != len(reports):
+            _GUEST_REPORTS[code] = fresh
+            changed = True
+    if changed:
+        _save_guest_reports()
+
+
+def _guest_reported_items(corpus_id):
+    """Множество id блюд корпуса, помеченных гостями."""
+    _purge_expired_guest_reports()
+    return set(_GUEST_REPORTS.get(corpus_id, {}).keys())
+
+
 def corpus_by_id(corpus_id):
     """Возвращает корпус (кортеж из _CORPS) по коду или None."""
-    for entry in _CORPS:
-        if entry[1] == corpus_id:
-            return entry
-    return None
+    return _CORPS_BY_ID.get(corpus_id)
 
 
 def corpus_dict(entry):
     """Превращает кортеж корпуса в словарь для шаблона (с актуальными данными)."""
     name, code, canteen_location, default_load, x, y = entry
-    stat = compute_status(code)
+    stat = cached_status(code)
     nodata = stat["status"] == "NO_DATA"
     return {
         "id": code,
@@ -238,6 +322,7 @@ def _visible_menu(corpus_id, visible_only):
     Для гостей (visible_only=True) скрытые категории пропускаются.
     Для работника возвращается всё меню, включая скрытое.
     """
+    reported = _guest_reported_items(corpus_id)
     result = []
     for cat in _CURRENT_MENU.get(corpus_id, []):
         if visible_only and not cat["visible"]:
@@ -246,9 +331,19 @@ def _visible_menu(corpus_id, visible_only):
             "id": cat["id"],
             "name": cat["name"],
             "visible": cat["visible"],
-            "items": [dict(item) for item in cat["items"]],
+            "items": [dict(item, guest_missing=(item["id"] in reported))
+                      for item in cat["items"]],
         })
     return result
+
+
+def _find_item(corpus_id, item_id):
+    """Ищет блюдо в меню корпуса по id (или None)."""
+    for cat in _CURRENT_MENU.get(corpus_id, []):
+        for item in cat["items"]:
+            if item["id"] == item_id:
+                return item
+    return None
 
 
 def _require_admin():
@@ -345,7 +440,7 @@ def api_loads():
     result = {}
     for entry in _CORPS:
         name, code, canteen_location, default_load, x, y = entry
-        stat = compute_status(code)
+        stat = cached_status(code)
         nodata = stat["status"] == "NO_DATA"
         result[code] = {
             "load": default_load if nodata else stat["status"],
@@ -411,6 +506,31 @@ def menu(corpus_id):
         return jsonify({"error": "Корпус не найден"}), 404
     visible_only = session.get("role") != "admin"
     return jsonify(_visible_menu(corpus_id, visible_only))
+
+
+@app.route("/corpus/<corpus_id>/menu/items/<item_id>/guest-missing", methods=["POST"])
+def toggle_guest_missing(corpus_id, item_id):
+    """Отметить/снять пометку «блюдо отсутствует» (доступно гостям).
+
+    Пометка гостя живёт сутки; её может отменить любой гость, а работник —
+    кнопкой «Сбросить пометку гостей» в админ-режиме.
+    """
+    if corpus_by_id(corpus_id) is None:
+        return jsonify({"error": "Корпус не найден"}), 404
+    if _find_item(corpus_id, item_id) is None:
+        return jsonify({"error": "Блюдо не найдено"}), 404
+
+    payload = request.get_json(silent=True) or {}
+    mark = bool(payload.get("mark", True))
+
+    _purge_expired_guest_reports()
+    reports = _GUEST_REPORTS.setdefault(corpus_id, {})
+    if mark:
+        reports[item_id] = time.time()
+    else:
+        reports.pop(item_id, None)
+    _save_guest_reports()
+    return jsonify({"guest_missing": item_id in reports})
 
 
 # ===== Управление меню (только для работника) ===========================

@@ -8,7 +8,9 @@
   - Итоговый статус считает compute_status(): берутся голоса за последние
     10 минут, каждому присваивается вес (свежий голос — 3, старый — 1),
     считается взвешенное среднее и переводится в уровень по порогам.
-  - Один посетитель может голосовать за одну столовую не чаще раза в минуту.
+  - Один посетитель может голосовать за одну столовую не чаще раза в минуту,
+    а повторный голос обновляет его старое значение (у человека — одно мнение),
+    а не добавляется новым.
 
 Как подключить в run.py (всего две строки):
     from vote import vote_bp
@@ -42,8 +44,9 @@ OLD_WEIGHT = 1
 # уже при двух голосах, чтобы маркеры на карте не держались серыми).
 MIN_VOTES = 2
 
-# Кеш для GET /status: храним посчитанный статус не дольше минуты.
-CACHE_SECONDS = 60
+# Кеш для GET /status: храним посчитанный статус не дольше 10 секунд,
+# чтобы ответы были быстрыми, но данные — свежими.
+CACHE_SECONDS = 10
 
 # Папка с данными проекта (там же живут locations.json и menu.json).
 _DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -60,7 +63,6 @@ _status_lock = threading.Lock()
 
 def _connect():
     """Открывает соединение с базой (новое на каждый запрос — так проще)."""
-    os.makedirs(_DATA_DIR, exist_ok=True)
     conn = sqlite3.connect(_DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -202,6 +204,10 @@ def cast_vote(cafeteria_id, status, now=None):
     """
     Сохраняет голос и сразу возвращает свежий статус.
 
+    У одного посетителя за столовую хранится один голос: если он уже есть,
+    повторный голос не добавляет новую запись, а обновляет старую
+    (значение уровня и время — голос «омолаживается»).
+
     Возвращает пару (json-словарь, http-код).
     Если этот посетитель уже голосовал за эту столовую последнюю минуту —
     вернёт (ошибка) 429 и ничего не сохранит.
@@ -209,33 +215,35 @@ def cast_vote(cafeteria_id, status, now=None):
     now = now if now is not None else time.time()
     voter_id = _uid()
 
-    # Проверка «не чаще раза в минуту».
     conn = _connect()
     try:
+        # Проверка «не чаще раза в минуту» и поиск существующего голоса.
         row = conn.execute(
-            "SELECT timestamp FROM votes "
+            "SELECT id, timestamp FROM votes "
             "WHERE cafeteria_id = ? AND session_id = ? "
             "ORDER BY timestamp DESC LIMIT 1",
             (cafeteria_id, voter_id),
         ).fetchone()
-    finally:
-        conn.close()
 
-    if row is not None and now - row["timestamp"] < VOTE_GAP_SECONDS:
-        return (
-            {"error": "Вы уже голосовали за эту столовую. Подождите минуту."},
-            429,
-        )
+        if row is not None and now - row["timestamp"] < VOTE_GAP_SECONDS:
+            return (
+                {"error": "Вы уже голосовали за эту столовую. Подождите минуту."},
+                429,
+            )
 
-    # Сохраняем голос и заодно чистим совсем старые записи.
-    conn = _connect()
-    try:
+        # Сохраняем голос и заодно чистим совсем старые записи.
         _cleanup_old(conn, now)
-        conn.execute(
-            "INSERT INTO votes (cafeteria_id, status, session_id, timestamp) "
-            "VALUES (?, ?, ?, ?)",
-            (cafeteria_id, status, voter_id, now),
-        )
+        if row is None:
+            conn.execute(
+                "INSERT INTO votes (cafeteria_id, status, session_id, timestamp) "
+                "VALUES (?, ?, ?, ?)",
+                (cafeteria_id, status, voter_id, now),
+            )
+        else:
+            conn.execute(
+                "UPDATE votes SET status = ?, timestamp = ? WHERE id = ?",
+                (status, now, row["id"]),
+            )
         conn.commit()
     finally:
         conn.close()
@@ -264,19 +272,30 @@ def vote():
 
 @vote_bp.route("/status/<cafeteria_id>")
 def status(cafeteria_id):
-    """Текущий статус столовой с кешированием на минуту (GET /status/<id>)."""
-    now = time.time()
+    """Текущий статус столовой с кешированием на 10 секунд (GET /status/<id>)."""
+    return jsonify(cached_status(cafeteria_id))
+
+
+def cached_status(cafeteria_id, now=None):
+    """Статус столовой, взятый из кеша (считается не чаще раза в CACHE_SECONDS).
+
+    Общая функция для /status и карты на главной (/api/loads): они делят один
+    кеш и одну блокировку, поэтому карта не нагружает сервер лишними
+    пересчётами.
+    """
+    if now is None:
+        now = time.time()
 
     with _status_lock:
         cached = _status_cache.get(cafeteria_id)
         if cached is not None and now - cached[0] < CACHE_SECONDS:
-            return jsonify(cached[1])
+            return cached[1]
 
     result = compute_status(cafeteria_id, now)
 
     with _status_lock:
         _status_cache[cafeteria_id] = (now, result)
-    return jsonify(result)
+    return result
 
 
 init_db()
