@@ -145,6 +145,15 @@
     loadCard.classList.add("load-" + newLoad);
   }
 
+  function setSelected(load) {
+    Array.prototype.forEach.call(buttons, function (b) {
+      b.classList.toggle("selected", b.getAttribute("data-load") === load);
+    });
+  }
+
+  var matchLoad = (loadCard.className || "").match(/load-(low|medium|high)/);
+  if (matchLoad) setSelected(matchLoad[1]);
+
   function showFeedback(text, autoHide) {
     feedback.textContent = text;
     feedback.classList.add("show");
@@ -176,6 +185,7 @@
             throw new Error(data.error);
           }
           applyLoad(data.load);
+          setSelected(data.load);
           showFeedback("Спасибо, обновили!", true);
         })
         .catch(function () {

@@ -863,7 +863,7 @@ CORPUS_HTML = """<!DOCTYPE html>
     .card-img {
       display: none;
       width: 100%;
-      height: 210px;
+      height: 260px;
       object-fit: cover;
       object-position: center;
       border-radius: var(--radius);
@@ -887,7 +887,7 @@ CORPUS_HTML = """<!DOCTYPE html>
 
     .menu-open-btn {
       display: block;
-      width: min(620px, 100%);
+      width: min(680px, 100%);
       padding: 0;
       border: none;
       outline: none;
@@ -1100,18 +1100,17 @@ CORPUS_HTML = """<!DOCTYPE html>
 
     .report-title { font-size: 24px; font-weight: 800; color: #10245c; margin: 0 0 4px; text-align: center; }
 
-    /* Блок с кнопками оценки загруженности.
-       Без рамки и фона: сами кнопки уже являются большими плашками. */
+    /* Блок с кнопками оценки загруженности в рамке, как на первой странице. */
     .report-options {
       display: flex;
       flex-direction: column;
       gap: 16px;
       width: 100%;
-      padding: 8px 0 12px;
-      margin: 0;
-      background: transparent;
-      border: none;
-      box-shadow: none;
+      padding: 18px 22px;
+      margin: 0 0 26px;
+      background: #e2e2e2;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
     }
 
     .report-btn {
@@ -1145,11 +1144,11 @@ CORPUS_HTML = """<!DOCTYPE html>
       transition: opacity 0.2s ease;
       pointer-events: none;
     }
-    /* Белый кружок постоянно мягко появляется и исчезает.
-       На каждой кнопке свой небольшой сдвиг, поэтому движение выглядит живым. */
-    .report-btn .hover-dot { animation: dotAppearDisappear 1.8s ease-in-out infinite; }
-    .report-btn.medium .hover-dot { animation-delay: 0.35s; }
-    .report-btn.high .hover-dot { animation-delay: 0.7s; }
+    /* Белый кружок появляется и мягко пульсирует только на выбранной кнопке. */
+    .report-btn.selected .hover-dot {
+      opacity: 1;
+      animation: dotAppearDisappear 1.4s ease-in-out infinite;
+    }
 
     @keyframes dotAppearDisappear {
       0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.55); }
@@ -1295,7 +1294,7 @@ CORPUS_HTML = """<!DOCTYPE html>
       }
 
       .card-img {
-        height: auto;
+        height: 230px;
         min-height: 0;
       }
 
@@ -1306,14 +1305,15 @@ CORPUS_HTML = """<!DOCTYPE html>
 
       .menu-image {
         height: auto;
-        min-height: 82px;
+        min-height: 108px;
       }
 
       .menu-open-btn:hover { transform: none; }
 
       .report-options {
         gap: 10px;
-        padding: 8px 0 10px;
+        padding: 12px 14px;
+        margin-bottom: 18px;
       }
 
       .report-title {
