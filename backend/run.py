@@ -860,10 +860,11 @@ CORPUS_HTML = """<!DOCTYPE html>
     }
     .frame-box.plain { border: none; }
 
+    .load-card { width: min(520px, 100%); margin: 0 auto; }
     .card-img {
       display: none;
       width: 100%;
-      height: 190px;
+      height: auto;
       object-fit: cover;
       object-position: center;
       border-radius: var(--radius);
@@ -880,7 +881,7 @@ CORPUS_HTML = """<!DOCTYPE html>
     /* Кнопка меню находится над надписью «УрФУ Столовая». */
     .menu-button-wrap {
       width: 100%;
-      margin: -18px auto 0;
+      margin: -40px auto 0;
       display: flex;
       justify-content: center;
     }
@@ -1161,9 +1162,10 @@ CORPUS_HTML = """<!DOCTYPE html>
 
     .report-feedback {
       position: absolute;
-      top: 0;
       left: 0;
       right: 0;
+      top: 50%;
+      transform: translateY(-50%);
       font-size: 18px;
       font-weight: 700;
       color: #7a8090;
@@ -1187,6 +1189,11 @@ CORPUS_HTML = """<!DOCTYPE html>
       color: #7a8090;
       font-size: 18px;
       font-weight: 700;
+    }
+    .footer-brand {
+      position: relative;
+      margin-top: -4px;
+      min-height: 26px;
     }
     .footer-text { display: inline-block; transition: opacity 0.3s ease; }
     footer.fb-shown .footer-text { opacity: 0; }
@@ -1295,7 +1302,7 @@ CORPUS_HTML = """<!DOCTYPE html>
       }
 
       .card-img {
-        height: 170px;
+        height: auto;
         min-height: 0;
       }
 
@@ -1326,7 +1333,7 @@ CORPUS_HTML = """<!DOCTYPE html>
       .report-btn:hover { transform: scale(1.025); }
       .report-btn:active,
       .report-btn.is-pressed { transform: scale(1.06); }
-      .menu-button-wrap { margin-top: -14px; }
+      .menu-button-wrap { margin-top: -30px; }
       .menu-open-btn:hover { transform: scale(1.025); }
       .menu-open-btn:active,
       .menu-open-btn.is-pressed { transform: scale(1.08); }
@@ -1473,15 +1480,16 @@ CORPUS_HTML = """<!DOCTYPE html>
   </main>
 
   <footer>
-    <div class="report-feedback" id="report-feedback">Спасибо, обновили!</div>
-
     <div class="menu-button-wrap">
       <button type="button" class="menu-open-btn" id="menu-open-btn" aria-label="Открыть меню" aria-haspopup="dialog">
         <img class="menu-image" src="{{ url_for('static', filename='img/menu.png') }}" alt="Меню столовой">
       </button>
     </div>
 
-    <span class="footer-text" id="footer-text">УрФУ Столовая</span>
+    <div class="footer-brand">
+      <div class="report-feedback" id="report-feedback">Спасибо, обновили!</div>
+      <span class="footer-text" id="footer-text">УрФУ Столовая</span>
+    </div>
   </footer>
 
   <!-- Модальное окно меню (Этап 3) -->
