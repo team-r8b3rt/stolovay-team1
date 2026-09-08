@@ -17,6 +17,9 @@
   var page = script ? script.getAttribute("data-page") : null;
   var isAdmin = script ? script.getAttribute("data-is-admin") === "1" : false;
   var csrfToken = script ? script.getAttribute("data-csrf") || "" : "";
+  // Сколько секунд осталось до следующего голоса (0 — можно голосовать).
+  // Приходит с сервера, чтобы таймер не сбрасывался после перезахода.
+  var voteLock = script ? parseInt(script.getAttribute("data-vote-lock") || "0", 10) : 0;
 
   function csrfHeaders(extraHeaders) {
     var headers = extraHeaders || {};
@@ -215,18 +218,24 @@
     }
   }
 
+  function fmtLock(total) {
+    var mm = Math.floor(total / 60);
+    var ss = (total % 60 < 10 ? "0" : "") + (total % 60);
+    return mm + ":" + ss;
+  }
+
   // После успешного голоса кнопки блокируются на 1 минуту (столько же
   // запрещает повторный голос сервер), а вместо статов — обратный отсчёт.
-  function lockButtons() {
-    var left = 60;
-    if (loadStats) loadStats.textContent = "Вы голосовали. Следующий голос через 1:00";
+  // startSeconds позволяет продолжить отсчёт при повторном заходе на страницу.
+  function lockButtons(startSeconds) {
+    var left = (startSeconds == null || startSeconds < 0) ? 60 : Math.floor(startSeconds);
+    Array.prototype.forEach.call(buttons, function (b) { b.disabled = true; });
+    if (loadStats) loadStats.textContent = "Вы голосовали. Следующий голос через " + fmtLock(left);
     clearInterval(_unlockTimer);
     _unlockTimer = window.setInterval(function () {
       left -= 1;
       if (loadStats && left >= 0) {
-        var mm = Math.floor(left / 60);
-        var ss = (left % 60 < 10 ? "0" : "") + (left % 60);
-        loadStats.textContent = "Вы голосовали. Следующий голос через " + mm + ":" + ss;
+        loadStats.textContent = "Вы голосовали. Следующий голос через " + fmtLock(left);
       }
       if (left <= 0) {
         clearInterval(_unlockTimer);
@@ -300,6 +309,12 @@
   // Сразу проверяем статус и дальше обновляем каждые 2 секунды.
   refreshStatus();
   window.setInterval(refreshStatus, 2000);
+
+  // Если посетитель голосовал и вернулся на страницу в пределах минуты —
+  // продолжаем обратный отсчёт с той секунды, которую прислал сервер.
+  if (voteLock > 0) {
+    lockButtons(voteLock);
+  }
 
   // Редактирование расположения (только в админ-режиме)
   var locEditBtn = document.getElementById("loc-edit-btn");

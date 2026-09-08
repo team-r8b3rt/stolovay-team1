@@ -16,12 +16,11 @@ import os
 import secrets
 import threading
 import time
-from datetime import datetime
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 
 # Модуль голосования (голоса в SQLite, расчёт статуса) — см. vote.py.
-from vote import cast_vote, cached_status, list_recent_votes, vote_bp
+from vote import cast_vote, cached_status, vote_bp, vote_lock_seconds
 
 # ===== Папки проекта =====================================================
 # Все папки задаём явно (относительно этого файла), чтобы сервер работал
@@ -407,35 +406,7 @@ def corpus(corpus_id):
         "corpus.html", corpus=data, role=role, role_name=role_name,
         load_name=load_name, load_desc=load_desc,
         csrf_token=get_csrf_token(),
-    )
-
-
-@app.route("/journal")
-def journal():
-    """Журнал событий (только для работника): последние голоса с метками времени."""
-    err = _require_admin()
-    if err:
-        return err
-
-    name_by_code = {entry[1]: entry[0] for entry in _CORPS}
-    status_text = {"low": "Свободно", "medium": "Средне", "high": "Много народу"}
-    events = []
-    for row in list_recent_votes(50):
-        events.append({
-            # Метка времени в удобном виде (в базе хранится в секундах).
-            "time": datetime.fromtimestamp(row["timestamp"]).strftime("%H:%M:%S %d.%m.%Y"),
-            "cafeteria": name_by_code.get(row["cafeteria_id"], row["cafeteria_id"]),
-            # status_key нужен для цветной точки; status — русское название уровня.
-            "status_key": row["status"],
-            "status": status_text.get(row["status"], row["status"]),
-            # Показываем только первые символы анонимного id, чтобы не раскрывать посетителей.
-            "session": (row["session_id"] or "")[:6] + "…",
-        })
-
-    role, role_name = role_info()
-    return render_template(
-        "journal.html", events=events, role=role, role_name=role_name,
-        csrf_token=get_csrf_token(),
+        vote_lock=vote_lock_seconds(corpus_id),
     )
 
 

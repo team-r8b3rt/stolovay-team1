@@ -354,20 +354,26 @@
     }
 
     .menu-item.guest-missing {
-      background: #fff6e0;
-      border: 1px dashed var(--color-accent);
+      background: #f0f2f5;
+      border: 1px dashed #9aa0ad;
       border-radius: 8px;
       padding: 8px 6px;
       margin: 4px 0;
     }
+    .menu-item.guest-missing .menu-item-name {
+      color: #9aa0ad;
+    }
+    .menu-item.guest-missing .menu-item-price {
+      color: #9aa0ad;
+    }
     .menu-item.guest-missing .menu-item-description {
-      color: #8a6d00;
+      color: #9aa0ad;
     }
     .menu-item-guest-tag {
       font-size: 11px;
       font-weight: 700;
-      color: #7a5b00;
-      background: #ffe9a8;
+      color: #5f6775;
+      background: #e2e5ea;
       padding: 2px 8px;
       border-radius: 999px;
       margin-left: 8px;
@@ -381,11 +387,11 @@
       font-size: 12px;
     }
     .menu-btn.guest-mark {
-      background: #fff2cc;
-      color: #7a5b00;
+      background: #e2e5ea;
+      color: #5f6775;
     }
     .menu-btn.guest-clear {
-      background: #fdf3f3;
+      background: #e2e5ea;
       color: #a54a1f;
     }
 
@@ -770,9 +776,6 @@
     </div>
     <div class="role-box">
       <span class="role-label"><strong>{{ 'Административный режим' if role == 'admin' else 'Гостевой режим' }}</strong></span>
-      {% if role == 'admin' %}
-        <a class="btn-back" href="{{ url_for('journal') }}">Журнал событий</a>
-      {% endif %}
       <a class="btn-back" href="{{ url_for('index') }}">← Назад на главную</a>
     </div>
   </header>
@@ -896,6 +899,7 @@
   <script defer src="{{ url_for('static', filename='js/main.js') }}"
           data-corpus="{{ corpus.id }}"
           data-is-admin="{{ '1' if role == 'admin' else '0' }}"
-          data-csrf="{{ csrf_token }}"></script>
+          data-csrf="{{ csrf_token }}"
+          data-vote-lock="{{ vote_lock }}"></script>
 </body>
 </html>

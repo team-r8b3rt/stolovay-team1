@@ -126,20 +126,6 @@ def _recent_votes(cafeteria_id, now):
         conn.close()
 
 
-def list_recent_votes(limit=50):
-    """Свежие голоса для журнала событий: от новых к старым, не больше limit."""
-    conn = _connect()
-    try:
-        rows = conn.execute(
-            "SELECT id, cafeteria_id, status, session_id, timestamp "
-            "FROM votes ORDER BY timestamp DESC LIMIT ?",
-            (limit,),
-        ).fetchall()
-        return rows
-    finally:
-        conn.close()
-
-
 def compute_status(cafeteria_id, now=None):
     """
     Считает текущий статус столовой из всех голосов.
@@ -274,6 +260,35 @@ def vote():
 def status(cafeteria_id):
     """Текущий статус столовой с кешированием на 10 секунд (GET /status/<id>)."""
     return jsonify(cached_status(cafeteria_id))
+
+
+def vote_lock_seconds(cafeteria_id, now=None):
+    """Сколько секунд осталось, пока этот посетитель не сможет голосовать снова.
+
+    Считает по его последнему голосу за эту столовую: если он был меньше
+    минуты назад, вернёт остаток до минуты (целые секунды, 0 — можно сейчас).
+    Нужен, чтобы таймер обратного отсчёта сохранялся при повторном заходе
+    на страницу корпуса.
+    """
+    if now is None:
+        now = time.time()
+    voter_id = _uid()
+
+    conn = _connect()
+    try:
+        row = conn.execute(
+            "SELECT timestamp FROM votes "
+            "WHERE cafeteria_id = ? AND session_id = ? "
+            "ORDER BY timestamp DESC LIMIT 1",
+            (cafeteria_id, voter_id),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    if row is None:
+        return 0
+    left = VOTE_GAP_SECONDS - (now - row["timestamp"])
+    return max(0, int(left))
 
 
 def cached_status(cafeteria_id, now=None):

@@ -109,12 +109,6 @@
 
     .btn-role:active { transform: scale(0.96); }
 
-    /* Ссылка в шапке, оформленная как кнопка (например «Журнал событий»)*/
-    .btn-role-link {
-      display: inline-block;
-      text-decoration: none;
-    }
-
     /* ===== Карта кампуса ===== */
     .map-section {
       padding: 4px 20px 20px;
@@ -467,7 +461,6 @@
     <div class="role-box">
       <span class="role-label"><span class="role-prefix">Вы:</span> <strong>{{ role_name }}</strong></span>
       {% if role == 'admin' %}
-        <a class="btn-role btn-role-link" href="{{ url_for('journal') }}">Журнал событий</a>
         <form method="post" action="{{ url_for('logout') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button type="submit" class="btn-role">Выйти из режима работника</button>
